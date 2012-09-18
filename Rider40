@@ -1,0 +1,539 @@
+
+This what i have currently figured out about the Rider40 device.
+
+
+To read the data from the device one can use the SCSI Read(10) command.
+
+You can read more about the commands at Wikipedia:
+http://en.wikipedia.org/wiki/SCSI_command
+
+To read the correct data the reserved byte nr. 7 in the
+SCSI Read(10) command needs to be set to 0x10.
+Changing this value will return different data:
+
+Read(10) with various values for byte nr. 7:
+
+0x03 - Read Serial number
+0x0b - Read Firmware (I think)
+0x0d - Read Firmware (I think)
+0x10 - Read gps data, sensor data, planned trip...
+
+
+See dump.py for example how to read from the device in python.
+
+
+
+
+
+
+Offset 0x0 - 0x6000:
+
+
+This seems to be some kind of log of the latest changes.
+I'm not exactly sure what the purpose of this is.
+
+
+In these tables the first value is the offset in hex, the second value
+is the number of bytes from the offset to read as a decimal number.
+
+
+Repeating blocks of 256 bytes
+==========================
+ Bytes  | Type | Description
+----------------------------
+00    2 | UI16 | Constant value of 0xAAFF ?
+----------------------------
+02   64 |      | Unknown, mostly 0xFF values but sometimes one byte
+        |      | have different value
+----------------------------
+42    2 | UI16 | Unknown, related to POI, possibly space left for POI's?
+----------------------------
+44    4 | UI32 | Offset to start of a POI
+----------------------------
+48    4 | UI32 | Offset to end of a last POI
+----------------------------
+4C    4 | UI32 | Unknown, Size left for unknown data?
+----------------------------
+50    4 | UI32 | Offset to start of unknown data
+----------------------------
+54    4 | UI32 | Offset to end of a unknown data
+----------------------------
+58    4 | UI32 | ? Space left for tracks?
+----------------------------
+5C    4 | UI32 | Offset to the first track in track list
+----------------------------
+60    4 | UI32 | Offset to the end of the last track in the history
+----------------------------
+64    4 |      | Unknown
+----------------------------
+68    4 | UI32 | Offset to the start of the first lap in the history
+----------------------------
+6C    4 | UI32 | Offset to the start of a last lap in the history
+----------------------------
+70    4 |      | Unknown
+----------------------------
+74    4 | UI32 | Offset to start of unknown data
+----------------------------
+78    4 | UI32 | Offset to end of unknown data
+----------------------------
+7C    4 |      | Unknown
+----------------------------
+80    4 | UI32 | Offset to start of unknown data
+----------------------------
+84    4 | UI32 | Offset to end of unknown data
+----------------------------
+88    4 |      | Unknown, possibly number of bytes left for trackpoints
+----------------------------
+8C    4 | UI32 | Offset to start of the GPS trackpoints
+----------------------------
+90    4 | UI32 | Offset to start of a GPS trackpoint
+----------------------------
+94    4 |      | Unknown, possibly number of bytes left for logpoints
+----------------------------
+98    4 | UI32 | Offset to start of logpoints from sensors (hr, cadence, ...)
+----------------------------
+9C    4 | UI32 | Offset to start of a logpoint
+----------------------------
+A0    4 |      | Unknown
+----------------------------
+A4    4 | UI32 | Offset to start of unknown data
+----------------------------
+A8    4 | UI32 | Offset to end of unknown data
+-----------------------------------------------------
+AC    4 | UI32 | Offset to start of unknown data
+----------------------------
+B0    4 | UI32 | Offset to start of some gps data? (Not Always)
+----------------------------
+B4    4 | UI32 | Offset to start of some log data? (Not Always)
+----------------------------
+B8    4 | UI32 | Offset to start of a lap? (Not Always)
+----------------------------
+BC    4 |      | Unknown
+----------------------------
+C0    4 | UI32 | Offset to start of a POI
+-----------------------------------------------------
+C4    4 |      | Unknown
+-----------------------------------------------------
+C8    4 | UI32 | Offset to start of track in tracklist
+-----------------------------------------------------
+CC   20 |      | Unknown
+-----------------------------------------------------
+E0   32 |      | Unknown, nothing? only 0xff
+-----------------------------------------------------
+
+
+
+
+
+
+
+
+
+POI Data, Offset 0x6154
+============================
+ Bytes  | Type | Description
+----------------------------
+00    4 | UI32 | Count of saved POI
+----------------------------
+04    4 |      | Unknown
+----------------------------
+08    4 | UI32 | Absolute offset to start of last POI
+----------------------------
+0C   16 |      | Empty Only 0xFF
+
+
+Then there is a list of the POI's.
+
+Each POI:
+============================
+ Bytes  | Type | Description
+----------------------------
+00    4 | I32  | Longitude. Devide by 1000000 to get value.
+----------------------------
+04    4 | I32  | Latitude. Devide by 1000000 to get value.
+----------------------------
+08    4 |      | Unknown
+----------------------------
+0C    4 | UI32 | This seems to be the total number of bytes the POI's above
+        |      | and including the current one are using.
+        |      | In the last POI this value is 0xffffff and are filled in
+        |      | when a new POI is added
+----------------------------
+10   10 |      | Unknown
+----------------------------
+1a    2 | UI16 | The length of the name of the POI
+----------------------------
+1c    8 |      | String "ENG" and rest is 0.
+        |      | Maybe is changes if device use different language?
+----------------------------
+24      | STR  | A string with the length of the value in 1a offset.
+----------------------------
+
+
+
+
+
+
+
+
+
+
+
+Track List,  Offset 0x7AC86
+
+
+This contains track history and planned trips.
+The name of the planned trips are stored as image data.
+
+Track list header
+============================
+ Bytes  | Type | Description
+----------------------------
+00    4 | UI32 | Unknown, maybe the number of bytes before the tracklist begins
+----------------------------
+04    4 |      | Unknown
+----------------------------
+08    2 | UI16 | Number of tracks in list
+----------------------------
+0A    2 |      | Unknown, Always 0xFFFF ?
+----------------------------
+0C    4 | UI32 | Absolute Offset to the start of last track
+        |      | Seems to only be used for history tracks, not planned
+        |      | trips. And only if there is more than 1 track in the
+        |      | history. Else it is filled with 0xFF
+----------------------------
+10    8 |      | Unknown, Filled with 0xFF ?
+----------------------------
+
+
+Then the tracks follows:
+
+Track
+============================
+ Bytes  | Type | Description
+----------------------------
+00    4 | UI32 | Timestamp, start of track.
+        |      | If this is filled with 0xFF i think it's a planned trip.
+----------------------------
+04    4 |      | Unknown
+----------------------------
+08    4 | UI32 | Relative offset from the top of the gps trackpoints
+        |      | to start of this tracks gps trackpoints.
+----------------------------
+0C    4 | UI32 | ? Relative offset from the top of the lap list to
+        |      | the last lap in this track.
+        |      | Filled with 0xFF for planned trips
+----------------------------
+10    4 | UI32 | ? Relative offset from the top of the lap list to
+        |      | the first lap in this track.
+        |      | Filled with 0xFF for planned trips
+----------------------------
+14    4 | UI32 | ? Relative offset from the top of the log points
+        |      | the start of this tracks log points.
+        |      | Filled with 0xFF for planned trips
+----------------------------
+18    1 | UI8  | ? Lap count?
+----------------------------
+19    3 |      | Unknown
+----------------------------
+1C    4 | UI32 | This seems to be the total number of bytes the tracks above
+        |      | and including the current one are using.
+        |      | In the last track this value is 0xffffff and are filled in
+        |      | when a new tracks is added
+----------------------------
+20    6 |      | Unknown
+----------------------------
+26    2 | UI16 | Length of the string below
+----------------------------
+28    8 |      | A string "ENG" (padded with 0?, but i have seen other values)
+----------------------------
+30      | STR  | A string with the length from offset 26.
+        |      | For planned trips this is the uncompressed data for a
+        |      | png image. See description of "Image" below.
+
+
+
+
+
+
+
+
+
+
+Summary of laps and tracks, Offset 0x83000
+
+This is a summary of the laps and also a
+summary of the whole ride. The last summary in a group of laps
+is the summary for the whole ride.
+
+Repeating from offset 0x83000
+============================
+ Bytes  | Type | Description
+----------------------------
+00    4 | UI32 | Timestamp, start of lap or ride.
+----------------------------
+04    4 | UI32 | Timestamp, end of lap or ride.
+----------------------------
+08    4 | UI32 | Total distance in meters.
+----------------------------
+0C    1 | UI8  | Avg Speed. Calculated by
+        |      | value / 8 * 60 * 60 / 1000 = speed in kph
+----------------------------
+0D    1 | UI8  | Max Speed. Calculated by
+        |      | value / 8 * 60 * 60 / 1000 = speed in kph
+----------------------------
+0E    1 | UI8  | Avg heart rate.
+----------------------------
+0F    1 | UI8  | Max heart rate.
+----------------------------
+10    1 | UI8  | Avg cadence.
+----------------------------
+11    1 | UI8  | Max cadence.
+----------------------------
+12    1 | UI8  | Avg power.
+----------------------------
+13    1 | UI8  | Max power.
+----------------------------
+14    2 |      | Unknown, maybe power uses 2 bytes for each?
+----------------------------
+16    2 | UI16 | Altitude gain in meters.
+----------------------------
+18    2 | UI16 | Altitude loss in meters.
+----------------------------
+1A    2 | UI16 | Calories
+----------------------------
+1C    2 | UI32 | Ride time in seconds. The time you have been moving.
+----------------------------
+1E   24 |      | Unknown, seems to be filled with 0
+----------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+GPS trackpoints Offset 0xAB000
+==============================
+ Bytes  | Type | Description
+------------------------------
+00    4 | UI32 | Maybe the number of bytes before the tracklist begins,
+        |      | Including this 4 bytes.
+------------------------------
+04   20 |      | Unknown, Seems to be filled with 0xFF
+------------------------------
+
+
+Then the trackpoints follows
+
+(When a Planned Trip is stored, the values below may not be valid. I
+haven't checked.)
+
+
+GPS track point track header
+============================
+ Bytes  | Type | Description
+----------------------------
+00    4 | UI32 | Timestamp, start of track
+------------------------------
+04   20 | UI32 | Unknown, seems to be filled with 0xFF
+------------------------------
+18    4 |      | Unknown
+------------------------------
+1C    4 | UI32 | Seems to be the size in bytes from the start of the first
+        |      | track points to the end of this header.
+------------------------------
+20    4 |      | Unknown
+------------------------------
+24    4 | UI32 | Relative offset from the top of the logpoint to the
+        |      | start of this lap's logpoints.
+------------------------------
+
+
+Each lap has a header.
+
+
+GPS track point lap header
+==============================
+00    4 | UI32 | Timestamp
+------------------------------
+04    4 | UI32 | Longitude at start. Devide by 1000000 to get value.
+------------------------------
+08    4 | UI32 | Latitude at start. Devide by 1000000 to get value.
+------------------------------
+0C    4 | UI32 | Longitude at end. Devide by 1000000 to get value.
+------------------------------
+10    4 | UI32 | Latitude at end. Devide by 1000000 to get value.
+------------------------------
+14   12 |      | Unknown
+------------------------------
+20    4 | UI32 | Count of the number of trackpoints in this track
+------------------------------
+24    4 |      | Unknown
+------------------------------
+
+
+Then each track points follows
+
+GPS track point (6 bytes)
+============================
+ Bytes  | Type | Description
+----------------------------
+00    1 |      | Unknown
+------------------------------
+01    1 | I8   | Elevation difference since last point.
+------------------------------
+02    2 | I16  | Longitude difference from the last point.
+        |      | This value is added to the start longitude from
+        |      | the header above and saved for the next point.
+------------------------------
+04    2 | I16  | Latitude difference from the last point.
+        |      | This value is added to the start latitude from
+        |      | the header above and saved for the next point.
+------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Log points Offset 0x121000
+==============================
+ Bytes  | Type | Description
+------------------------------
+00    4 | UI32 | Maybe the number of bytes before the list begins,
+        |      | Including this 4 bytes.
+------------------------------
+04   20 |      | Unknown, Seems to be filled with 0xFF
+------------------------------
+
+
+Then the logpoints follows
+
+
+Logpoints header
+============================
+ Bytes  | Type | Description
+----------------------------
+00    4 | UI32 | Timestamp, start of lap
+------------------------------
+04    4 |      | Unknown, seems to be filled with 0xFF
+------------------------------
+08    2 |      | Unknown
+------------------------------
+0A    2 | UI16 | Count of the number of logpoints in this lap
+------------------------------
+0C    4 |      | Unknown
+------------------------------
+
+
+Then each logpoint in the lap follows
+
+The time for each logpoint is the start time above +4 seconds for each
+point.
+
+Each Logpoint (8 bytes)
+============================
+ Bytes  | Type | Description
+----------------------------
+00    1 | UI8  | This seems to be the distance traveled in the last 8 seconds.
+        |      | In meters. This is used to calculate the speed.
+        |      | value / 8 * 60 * 60 / 1000 = speed in kph
+------------------------------
+01    1 | UI8  | The cadence in rpm. 0xFF if not available.
+------------------------------
+02    1 | UI8  | The heart rate in bpm. 0xFF if not available.
+------------------------------
+03    2 | I16  | The temperature in Celcius. Devide by 10 to get the value.
+------------------------------
+05    2 | UI16 | The barometric pressure. Multiply by 2 to get the value.
+        |      | In Pascal i think.
+------------------------------
+07    1 |      | Unknown, maybe watts from powermeter, but
+        |      | it has values even if no powermeter is available, so im
+        |      | not sure.
+------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Most of the text data on the device like the name of workouts,
+planned trips and descriptions are stored as images.
+The data in the image is the uncompressed content of the
+IDAT chunk in a png file.
+
+The image data is stored like this:
+
+Image
+============================
+ Bytes  | Type | Description
+----------------------------
+00    2 | UI16 | Length of the data
+----------------------------
+02    3 | STR  | This seems to indicate the language of the text.
+        |      | This seems to be mostly "ENG".
+        |      | It probably depends on the language of the device.
+----------------------------
+05    5 |      | Unknown, Seems to be "ff80001000" for one line images
+        |      | and "ff8000F000" for multiline images.
+----------------------------
+0A      |      | The data of the image. The length from the value at 00
+----------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+OFFSET 0x1F819F :  Bike Profile 1
+  4 Bytes : Bike profile 1 Ride Time
+  4 Bytes : Alt Gain
+  4 Bytes : ?
+  4 Bytes : Alt Loss
+  4 Bytes : ?
+
+
+
+
+
+
+
+
+
+
+
+
