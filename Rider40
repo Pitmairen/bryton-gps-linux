@@ -228,8 +228,8 @@ Track
         |      | the first lap in this track.
         |      | Filled with 0xFF for planned trips
 ----------------------------
-14    4 | UI32 | ? Relative offset from the top of the log points
-        |      | the start of this tracks log points.
+14    4 | UI32 | ? Relative offset from top of unknown data starting at
+        |      | offset 0x167000
         |      | Filled with 0xFF for planned trips
 ----------------------------
 18    1 | UI8  | ? Lap count?
