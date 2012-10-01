@@ -374,7 +374,10 @@ GPS track point lap header
 ------------------------------
 10    4 | UI32 | Latitude at end. Devide by 1000000 to get value.
 ------------------------------
-14   12 |      | Unknown
+14    4 | UI32 | Elevation at start. Subtract 4000 from the value
+        |      | and then devide by 4 to get the value in meters.
+------------------------------
+18    8 |      | Unknown
 ------------------------------
 20    4 | UI32 | Count of the number of trackpoints in this track
 ------------------------------
@@ -391,6 +394,7 @@ GPS track point (6 bytes)
 00    1 |      | Unknown
 ------------------------------
 01    1 | I8   | Elevation difference since last point.
+        |      | Devide by 10 to get value in meters.
 ------------------------------
 02    2 | I16  | Longitude difference from the last point.
         |      | This value is added to the start longitude from
