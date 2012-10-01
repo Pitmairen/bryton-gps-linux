@@ -374,7 +374,11 @@ GPS track point lap header
 ------------------------------
 10    4 | UI32 | Latitude at end. Devide by 1000000 to get value.
 ------------------------------
-14    4 | UI32 | Elevation at start. Subtract 4000 from the value
+14    2 | UI16 | Elevation at start. Subtract 4000 from the value
+        |      | and then devide by 4 to get the value in meters.
+------------------------------
+16    2 | UI16 | Elevation at end (i think).
+        |      | Subtract 4000 from the value
         |      | and then devide by 4 to get the value in meters.
 ------------------------------
 18    8 |      | Unknown
