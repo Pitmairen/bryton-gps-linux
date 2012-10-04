@@ -335,36 +335,23 @@ GPS trackpoints Offset 0xAB000
 
 Then the trackpoints follows
 
+The trackpoints are stored in segments. 
+A new segment is created when the track is paused
+either by the pause button or automatically if the device is
+not moving for a period of time.
+
+In the first segment of a track the coordinates and elevation
+is filled with 0xFF. And it contains 0 track points.
+I'm not sure if this is always true, but all the tracks
+on my device has started this way.
+
 (When a Planned Trip is stored, the values below may not be valid. I
 haven't checked.)
 
 
-GPS track point track header
-============================
- Bytes  | Type | Description
-----------------------------
-00    4 | UI32 | Timestamp, start of track
-------------------------------
-04   20 | UI32 | Unknown, seems to be filled with 0xFF
-------------------------------
-18    4 |      | Unknown
-------------------------------
-1C    4 | UI32 | Seems to be the size in bytes from the start of the first
-        |      | track points to the end of this header.
-------------------------------
-20    4 |      | Unknown
-------------------------------
-24    4 | UI32 | Relative offset from the top of the logpoint to the
-        |      | start of this lap's logpoints.
-------------------------------
-
-
-Each lap has a header.
-
-
-GPS track point lap header
+GPS track point segment header
 ==============================
-00    4 | UI32 | Timestamp
+00    4 | UI32 | Timestamp, start of track
 ------------------------------
 04    4 | UI32 | Longitude at start. Devide by 1000000 to get value.
 ------------------------------
@@ -381,12 +368,46 @@ GPS track point lap header
         |      | Subtract 4000 from the value
         |      | and then devide by 4 to get the value in meters.
 ------------------------------
-18    8 |      | Unknown
+18    4 | UI32 | The segment type. I'm note sure if the whole
+        |      | integer is used to identify the type or if it's
+        |      | just parts of it.
+------------------------------
+1C    4 | UI32 | Seems to be the size in bytes from the start of the first
+        |      | track points to the end of this header.
+        |      | Sometimes filled with 0xFF
 ------------------------------
 20    4 | UI32 | Count of the number of trackpoints in this track
 ------------------------------
-24    4 |      | Unknown
+24    4 | UI32 | Relative offset from the top of the logpoint to the
+        |      | start of this segments logpoints.
 ------------------------------
+
+
+Segment types:
+
+0x40010000:
+  This seems to be used when the device is starting to record
+  after a pause or it is first started, but is still not moving.
+  It will record logpoints but no trackpoints.
+  This lasts until the device starts moving.
+  This is recorded as breaktype 0 in the bdx files.
+
+0x40010100:
+  This seems to be used for a segment that is recorded until
+  the device stops moving and a autopause is started.
+  This is recorded as breaktype 1 in the bdx files.
+
+0x40010200:
+  This seems to be used for a segment that is recorded until
+  the device is paused manually with the button on the device.
+  This is recorded as breaktype 2 in the bdx files.
+
+0x40010300:
+  This seems to be used for the last segment.
+  This lasts until the end of the track
+  without any breaks.
+  This is recorded as breaktype 3 in the bdx files.
+
 
 
 Then each track points follows
@@ -439,8 +460,13 @@ Log points Offset 0x121000
 
 Then the logpoints follows
 
+The logpoints are stored in segments. 
+A new segment is created when the track is paused
+either by the pause button or automatically if the device is
+not moving for a period of time.
 
-Logpoints header
+
+Logpoint segment header
 ============================
  Bytes  | Type | Description
 ----------------------------
@@ -452,8 +478,33 @@ Logpoints header
 ------------------------------
 0A    2 | UI16 | Count of the number of logpoints in this lap
 ------------------------------
-0C    4 |      | Unknown
+0C    4 | UI32 | The segment type. I'm note sure if the whole
+        |      | integer is used to identify the type or if it's
+        |      | just parts of it.
 ------------------------------
+
+
+Segment types:
+
+0x02070A00:
+  Same as type 0x40010000 for the trackpoints.
+
+0x06070A00:
+  Same as type 0x40010100 for the trackpoints.
+  But it will continue to record into this segment
+  until it starts moving again. Then a segment 
+  type 0x02070A00 may be started.
+
+0x0A070A00:
+  Same as type 0x40010200 for the trackpoints.
+
+0x0E070A00:
+  Same as type 0x40010300 for the trackpoints.
+
+
+
+
+
 
 
 Then each logpoint in the lap follows
