@@ -458,8 +458,9 @@ Logpoints header
 
 Then each logpoint in the lap follows
 
-The time for each logpoint is the start time above +4 seconds for each
-point.
+The time of the first logpoint is the start time above.
+For all the other logpoints +4 seconds is added for each
+logpoint. 
 
 Each Logpoint (8 bytes)
 ============================
