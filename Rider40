@@ -395,7 +395,10 @@ GPS track point (6 bytes)
 ============================
  Bytes  | Type | Description
 ----------------------------
-00    1 |      | Unknown
+00    1 | I8   | I'm not sure what this value is but it is used to
+        |      | calculate the time of the track point.
+        |      | Devide this value by 4 to get the number of 
+        |      | seconds since the last track point.
 ------------------------------
 01    1 | I8   | Elevation difference since last point.
         |      | Devide by 10 to get value in meters.
