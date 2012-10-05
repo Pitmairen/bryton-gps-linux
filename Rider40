@@ -215,7 +215,11 @@ Track
 00    4 | UI32 | Timestamp, start of track.
         |      | If this is filled with 0xFF i think it's a planned trip.
 ----------------------------
-04    4 |      | Unknown
+04    2 | UI16 | This is the biketype that was set in the bike profile
+        |      | when this ride was recorded.
+----------------------------
+06    2 | UI16 | The weight that was set in the user profile when this ride
+        |      | was recorded. Devide by 100 to get value in Kg
 ----------------------------
 08    4 | UI32 | Relative offset from the top of the gps trackpoints
         |      | to start of this tracks gps trackpoints.
@@ -228,7 +232,7 @@ Track
         |      | the first lap in this track.
         |      | Filled with 0xFF for planned trips
 ----------------------------
-14    4 | UI32 | ? Relative offset from top of unknown data starting at
+14    4 | UI32 | ? Relative offset from top of settings data starting at
         |      | offset 0x167000
         |      | Filled with 0xFF for planned trips
 ----------------------------
@@ -539,7 +543,60 @@ Each Logpoint (8 bytes)
 
 
 
+OFFSET 0x167000 + 24
 
+Various settings in user profile and bikeprofile stored for each track.
+
+Repeating chunks of 152 bytes
+
+
+Settings data (152 bytes)
+============================
+ Bytes  | Type | Description
+----------------------------
+00    4 | UI32 | Timestamp
+------------------------------
+04    2 | UI16 | User Weight, Devide by 100 to get value in Kg
+------------------------------
+06    2 |      | Unknown
+------------------------------
+08    2 | UI16 | User Height, Devide by 100 to get value in cm
+------------------------------
+0A    1 | UI8  | Bike Type.
+------------------------------
+0B    1 | UI8  | Bike Weight. Devide by 10 to get value in in Kg.
+------------------------------
+0C    2 | UI16 | Bike Wheel Circumference in mm.
+------------------------------
+0E   10 |      | Unknown
+------------------------------
+18  128 |      | 4 zone definitions. See below.
+
+
+
+Then 4 zone definitions follow:
+
+Zone definition (32 bytes)
+============================
+00    2 | UI16 | Zone type
+------------------------------
+02    2 | UI16 | Maximum value in this zone. (Max HR, FTP...)
+------------------------------
+04   28 |      | Now 7 groups of 4 bytes follows. Each group represents a zone.
+        |      | The two UI16 in each group is the low and high percentage of the
+        |      | current zone.
+------------------------------
+
+
+Zone types:
+0x71:
+  Maximum heartrate. Type 1 in bdx file
+0x72:
+  Lactate threshold. Type 2 in bdx file
+0x73:
+  Maximum Aerobic Power. Type 3 in bdx file
+0x74:
+  Functional Threshold Power (FTP). Type 4 in bdx file.
 
 
 
@@ -577,7 +634,12 @@ Image
 
 
 
+User Profile
 
+OFFSET 0x1F8000
+
+0x1F814B - Gender (0 female, 1 male)
+0x1F814C - Age
 
 
 
