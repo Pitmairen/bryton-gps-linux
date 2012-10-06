@@ -360,13 +360,13 @@ GPS track point segment header
 ==============================
 00    4 | UI32 | Timestamp, start of track
 ------------------------------
-04    4 | UI32 | Longitude at start. Devide by 1000000 to get value.
+04    4 | I32  | Longitude at start. Devide by 1000000 to get value.
 ------------------------------
-08    4 | UI32 | Latitude at start. Devide by 1000000 to get value.
+08    4 | I32  | Latitude at start. Devide by 1000000 to get value.
 ------------------------------
-0C    4 | UI32 | Longitude at end. Devide by 1000000 to get value.
+0C    4 | I32  | Longitude at end. Devide by 1000000 to get value.
 ------------------------------
-10    4 | UI32 | Latitude at end. Devide by 1000000 to get value.
+10    4 | I32  | Latitude at end. Devide by 1000000 to get value.
 ------------------------------
 14    2 | UI16 | Elevation at start. Subtract 4000 from the value
         |      | and then devide by 4 to get the value in meters.
