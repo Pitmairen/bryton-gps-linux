@@ -215,8 +215,11 @@ Track
 00    4 | UI32 | Timestamp, start of track.
         |      | If this is filled with 0xFF i think it's a planned trip.
 ----------------------------
-04    2 | UI16 | This is the biketype that was set in the bike profile
+04    1 |      | Unknown, related to bike type or bike profile.
+----------------------------
+05    1 | UI8  | This is the biketype that was set in the bike profile
         |      | when this ride was recorded.
+        |      | Devide by 16 to get value for bdx files.
 ----------------------------
 06    2 | UI16 | The weight that was set in the user profile when this ride
         |      | was recorded. Devide by 100 to get value in Kg
@@ -372,9 +375,9 @@ GPS track point segment header
         |      | Subtract 4000 from the value
         |      | and then devide by 4 to get the value in meters.
 ------------------------------
-18    4 | UI32 | The segment type. I'm note sure if the whole
-        |      | integer is used to identify the type or if it's
-        |      | just parts of it.
+18    2 |      | Related to segment type
+------------------------------
+1A    2 | UI16 | The segment type.
 ------------------------------
 1C    4 | UI32 | Seems to be the size in bytes from the start of the first
         |      | track points to the end of this header.
@@ -389,24 +392,24 @@ GPS track point segment header
 
 Segment types:
 
-0x40010000:
+0:
   This seems to be used when the device is starting to record
   after a pause or it is first started, but is still not moving.
   It will record logpoints but no trackpoints.
   This lasts until the device starts moving.
   This is recorded as breaktype 0 in the bdx files.
 
-0x40010100:
+1:
   This seems to be used for a segment that is recorded until
   the device stops moving and a autopause is started.
   This is recorded as breaktype 1 in the bdx files.
 
-0x40010200:
+2:
   This seems to be used for a segment that is recorded until
   the device is paused manually with the button on the device.
   This is recorded as breaktype 2 in the bdx files.
 
-0x40010300:
+3:
   This seems to be used for the last segment.
   This lasts until the end of the track
   without any breaks.
@@ -482,28 +485,27 @@ Logpoint segment header
 ------------------------------
 0A    2 | UI16 | Count of the number of logpoints in this lap
 ------------------------------
-0C    4 | UI32 | The segment type. I'm note sure if the whole
-        |      | integer is used to identify the type or if it's
-        |      | just parts of it.
+0C    1 | UI8  | The segment type.
 ------------------------------
-
+0D    3 |      | Unknown, related to segment type.
+------------------------------
 
 Segment types:
 
-0x02070A00:
-  Same as type 0x40010000 for the trackpoints.
+0x02:
+  Same as type 0 for the trackpoints.
 
-0x06070A00:
-  Same as type 0x40010100 for the trackpoints.
+0x06:
+  Same as type 1 for the trackpoints.
   But it will continue to record into this segment
   until it starts moving again. Then a segment 
   type 0x02070A00 may be started.
 
-0x0A070A00:
-  Same as type 0x40010200 for the trackpoints.
+0x0A:
+  Same as type 2 for the trackpoints.
 
-0x0E070A00:
-  Same as type 0x40010300 for the trackpoints.
+0x0E:
+  Same as type 3 for the trackpoints.
 
 
 
@@ -562,7 +564,9 @@ Settings data (152 bytes)
 ------------------------------
 08    2 | UI16 | User Height, Devide by 100 to get value in cm
 ------------------------------
-0A    1 | UI8  | Bike Type.
+0A    1 | UI8  | Bike Type and Bike Profile.
+        |      | Biketype: floor(value/16) to get same value as in bdx files.
+        |      | Bike profile: value % 16 to get bike profile. 0 or 1 
 ------------------------------
 0B    1 | UI8  | Bike Weight. Devide by 10 to get value in in Kg.
 ------------------------------
