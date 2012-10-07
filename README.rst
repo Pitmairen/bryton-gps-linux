@@ -7,6 +7,7 @@ This is an attempt to make Bryton GPS devices usable on Linux.
 Code for the **Rider40** is now available in the **code** directory.
 
 It currently has the following functionality:
+
 - Readonly not write support
 - List track history
 - List track summary
