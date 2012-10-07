@@ -4,8 +4,15 @@ Bryton GPS on linux
 This is an attempt to make Bryton GPS devices usable on Linux.
 
 
-Currently there is no code available. Im just trying to figure out the
-layout of the data on the devices.
+Code for the **Rider40** is now available in the **code** directory.
+
+It currently has the following functionality:
+- Readonly not write support
+- List track history
+- List track summary
+- Generate GPX (plain and Garmin extension) and TCX files.
+
+
 
 I have only access to a Rider40, but im interested in data from other
 devices. See dump.py for an example how to read the data from you device.
