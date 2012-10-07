@@ -375,13 +375,15 @@ GPS track point segment header
         |      | Subtract 4000 from the value
         |      | and then devide by 4 to get the value in meters.
 ------------------------------
-18    2 |      | Related to segment type
+18    2 |      | Propably what format the trackpoints are stored in.
 ------------------------------
-1A    2 | UI16 | The segment type.
+1A    1 | UI8  | The segment type. Not completely sure about this.
 ------------------------------
-1C    4 | UI32 | Seems to be the size in bytes from the start of the first
-        |      | track points to the end of this header.
-        |      | Sometimes filled with 0xFF
+1B    1 |      | Probably related to segment type.
+------------------------------
+1C    4 | UI32 | Relative offset from the start of the first
+        |      | track points to the end of this segment. (start of next segment)
+        |      | For the last segment in a track it's filled with 0xFF
 ------------------------------
 20    4 | UI32 | Count of the number of trackpoints in this track
 ------------------------------
@@ -390,7 +392,7 @@ GPS track point segment header
 ------------------------------
 
 
-Segment types:
+Segment types: (Not completely sure about this.)
 
 0:
   This seems to be used when the device is starting to record
@@ -481,16 +483,16 @@ Logpoint segment header
 ------------------------------
 04    4 |      | Unknown, seems to be filled with 0xFF
 ------------------------------
-08    2 |      | Unknown
+08    2 |      | Logpoint format. See below.
 ------------------------------
 0A    2 | UI16 | Count of the number of logpoints in this lap
 ------------------------------
-0C    1 | UI8  | The segment type.
+0C    1 | UI8  | The segment type. Not completely sure about this.
 ------------------------------
 0D    3 |      | Unknown, related to segment type.
 ------------------------------
 
-Segment types:
+Segment types: (Not completely sure about this.)
 
 0x02:
   Same as type 0 for the trackpoints.
@@ -511,15 +513,31 @@ Segment types:
 
 
 
+Logpoint format:
+
+It seems like there is atleast two different formats
+for storing the logpoints. It probably depends on what kind of
+sensors are used. It is probably atleast one format more for storing
+power data.
+
+0x7104:
+  Stores: speed, temperature, airpressure, 1 uknown
+
+0x7704:
+  Stores: speed, temperature, airpressure, heartrate,
+          cadence, 1 unknown.
 
 
-Then each logpoint in the lap follows
+
+
+
+Then each logpoint in the segment follows.
 
 The time of the first logpoint is the start time above.
 For all the other logpoints +4 seconds is added for each
 logpoint. 
 
-Each Logpoint (8 bytes)
+Logpoint (Format 0x7704, 8 bytes)
 ============================
  Bytes  | Type | Description
 ----------------------------
@@ -536,10 +554,26 @@ Each Logpoint (8 bytes)
 05    2 | UI16 | The barometric pressure. Multiply by 2 to get the value.
         |      | In Pascal i think.
 ------------------------------
-07    1 |      | Unknown, maybe watts from powermeter, but
-        |      | it has values even if no powermeter is available, so im
-        |      | not sure.
+07    1 |      | Unknown
 ------------------------------
+
+
+Logpoint (Format 0x7104, 6 bytes)
+============================
+ Bytes  | Type | Description
+----------------------------
+00    1 | UI8  | This seems to be the distance traveled in the last 8 seconds.
+        |      | In meters. This is used to calculate the speed.
+        |      | value / 8 * 60 * 60 / 1000 = speed in kph
+------------------------------
+01    2 | I16  | The temperature in Celcius. Devide by 10 to get the value.
+------------------------------
+03    2 | UI16 | The barometric pressure. Multiply by 2 to get the value.
+        |      | In Pascal i think.
+------------------------------
+05    1 |      | Unknown
+------------------------------
+
 
 
 
