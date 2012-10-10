@@ -38,6 +38,8 @@ def create_lap(sum, parent, ns=tcx_ns):
 
     xml.SubElement(lap, ns('TotalTimeSeconds')).text = \
         format(sum.end - sum.start, '.1f')
+    xml.SubElement(lap, ns('DistanceMeters')).text = \
+        format(sum.distance, '.1f')
     xml.SubElement(lap, ns('MaximumSpeed')).text = \
         format(kph_to_ms(sum.speed.max), '.2f')
     xml.SubElement(lap, ns('Calories')).text = \
