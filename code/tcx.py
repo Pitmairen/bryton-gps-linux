@@ -37,7 +37,7 @@ def create_lap(sum, parent, ns=tcx_ns):
     lap.set(ns('StartTime'), format_timestamp(sum.start))
 
     xml.SubElement(lap, ns('TotalTimeSeconds')).text = \
-        format(sum.end - sum.start, 'f')
+        format(sum.end - sum.start, '.1f')
     xml.SubElement(lap, ns('MaximumSpeed')).text = \
         format(kph_to_ms(sum.speed.max), '.2f')
     xml.SubElement(lap, ns('Calories')).text = \
@@ -70,14 +70,14 @@ def create_track(seg, parent, ns=tcx_ns):
 
 def create_trackpoint(tp, lp, parent, ns=tcx_ns):
 
-    p = xml.SubElement(parent, ns('TrackPoint'))
+    p = xml.SubElement(parent, ns('Trackpoint'))
 
     xml.SubElement(p, ns('Time')).text = \
         format_timestamp(tp and tp.timestamp or lp.timestamp)
 
     if tp:
         create_position(tp, p, ns)
-        xml.SubElement(p, ns('Elevation')).text = format(tp.elevation, '.1f')
+        xml.SubElement(p, ns('AltitudeMeters')).text = format(tp.elevation, '.1f')
 
     if lp and lp.heartrate is not None:
         create_sub_value(p, ns('HeartRateBpm'), format(lp.heartrate, 'd'))
