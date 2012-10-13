@@ -159,7 +159,7 @@ def track_to_tcx(track, pretty=False):
     for seg in track.merged_segments():
 
         create_track(seg, lap, ns)
-        create_lap_ext(track.summary, lap)
+    create_lap_ext(track.summary, lap)
 
 
     if pretty:
