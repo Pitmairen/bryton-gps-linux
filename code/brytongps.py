@@ -9,6 +9,7 @@ import os
 
 
 import rider40
+import rider20
 import common
 import gpx
 import tcx
@@ -34,12 +35,15 @@ def get_device(dev):
     data = dev.read_addr(6, 1, 0x10).tostring()
 
     if not data.startswith('Hera Data'):
-        return None
-
+        raise RuntimeError('Unknown Device')
 
     dev_id = data[16:16 + 4]
 
-    if dev_id != '1504':
+    if dev_id == '1504':
+        return rider40, rider40.Rider40(dev)
+    elif dev_id == '1403':
+        return rider20, rider20.Rider20(dev)
+    else:
         warnings.warn('Unknown device model.', RuntimeWarning)
 
     return rider40, rider40.Rider40(dev)
