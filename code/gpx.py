@@ -10,12 +10,12 @@ _GPX_NS = "http://www.topografix.com/GPX/1/1"
 _GPX_NS_XSD = "http://www.topografix.com/GPX/1/1/gpx.xsd"
 _XSI_NS = "http://www.w3.org/2001/XMLSchema-instance"
 _GPXX_NS = "http://www.garmin.com/xmlschemas/GpxExtensions/v3"
-_GPXX_NS_XDS = "http://www.garmin.com/xmlschemas/GpxExtensionsv3.xds"
+_GPXX_NS_XSD = "http://www.garmin.com/xmlschemas/GpxExtensionsv3.xsd"
 _TPX_NS = "http://www.garmin.com/xmlschemas/TrackPointExtension/v1"
-_TPX_NS_XDS = "http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xds"
+_TPX_NS_XSD = "http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xsd"
 
 
-_from_ts = datetime.datetime.fromtimestamp
+_from_ts = datetime.datetime.utcfromtimestamp
 
 
 def _ns(name, ns):
@@ -140,7 +140,7 @@ def track_to_garmin_gpxx(track, pretty=False):
     root = xml.Element(ns('gpx'))
 
     root.set(xsi_ns('schemaLocation'), ' '.join([
-        _GPX_NS, _GPX_NS_XSD, _TPX_NS, _TPX_NS_XDS]))
+        _GPX_NS, _GPX_NS_XSD, _TPX_NS, _TPX_NS_XSD]))
 
     root.set(ns('version'), '1.1')
     root.set(ns('creator'), 'Bryton-GPS-Linux')

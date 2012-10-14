@@ -6,9 +6,9 @@ from utils import indent_element_tree
 from gpx import format_timestamp, _ns, xsi_ns
 
 _TCX_NS = "http://www.garmin.com/xmlschemas/TrainingCenterDatabase/v2"
-_TCX_NS_XSD = "http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xds"
+_TCX_NS_XSD = "http://www.garmin.com/xmlschemas/TrainingCenterDatabasev2.xsd"
 _ACT_EXT_NS = 'http://www.garmin.com/xmlschemas/ActivityExtension/v2'
-_ACT_EXT_NS_XDS = 'http://www.garmin.com/xmlschemas/ActivityExtensionv2.xds'
+_ACT_EXT_NS_XSD = 'http://www.garmin.com/xmlschemas/ActivityExtensionv2.xsd'
 
 
 def tcx_ns(name):
@@ -141,7 +141,7 @@ def track_to_tcx(track, pretty=False):
     root = xml.Element(ns('TrainingCenterDatabase'))
 
     root.set(xsi_ns('schemaLocation'), ' '.join([
-        _TCX_NS, _TCX_NS_XSD, _ACT_EXT_NS, _ACT_EXT_NS_XDS]))
+        _TCX_NS, _TCX_NS_XSD, _ACT_EXT_NS, _ACT_EXT_NS_XSD]))
 
 
     xml.register_namespace('', _TCX_NS)
