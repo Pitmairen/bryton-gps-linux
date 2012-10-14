@@ -15,7 +15,7 @@ _TPX_NS = "http://www.garmin.com/xmlschemas/TrackPointExtension/v1"
 _TPX_NS_XDS = "http://www.garmin.com/xmlschemas/TrackPointExtensionv1.xds"
 
 
-_from_ts = datetime.datetime.fromtimestamp
+_from_ts = datetime.datetime.utcfromtimestamp
 
 
 def _ns(name, ns):
