@@ -6,12 +6,14 @@ import argparse
 import warnings
 import datetime
 import os
-
+import getpass
+import time
 
 import rider40
 import common
 import gpx
 import tcx
+import strava
 
 
 
@@ -133,6 +135,43 @@ def export_tracks(tracks, export_func, file_ext, args):
 
 
 
+def upload_strava(tracks, args):
+
+    if args.strava_email is None:
+        print 'Missing email for strava.com'
+        return
+
+    password = args.strava_password
+    if password is None:
+        password = getpass.getpass('Strava.com password:')
+
+
+    uploader = strava.StravaUploader()
+
+    try:
+        print 'Authenticating to strava.com'
+        uploader.authenticate(args.strava_email, password)
+    except strava.StravaError, e:
+        print 'StravaError:', e.reason
+        return
+
+    for t in tracks:
+
+        try:
+            print 'Uploading track: {}'.format(t.name)
+            upload = uploader.upload(t)
+
+            while not upload.finished:
+                time.sleep(3)
+                p = upload.check_progress()
+
+            print 'Uploaded OK'
+
+
+
+        except strava.StravaError, e:
+            print 'StravaError:', e.reason
+
 
 
 def options():
@@ -165,6 +204,16 @@ def options():
                    help='Filename to export to. Only one track.')
     p.add_argument('--no-whitespace', action='store_false',
                    help='No unnecessary whitespace in exported files.')
+
+    p.add_argument('--strava', action='store_true',
+                   help='Upload tracks to strava.com')
+
+    p.add_argument('--strava-email', nargs='?',
+                   help='strava.com email')
+
+    p.add_argument('--strava-password', nargs='?',
+                   help='strava.com password')
+
 
     return p
 
@@ -206,6 +255,8 @@ def main():
                 export_tracks(tracks, gpx.track_to_garmin_gpxx, 'gpx', args)
             if args.tcx:
                 export_tracks(tracks, tcx.track_to_tcx, 'tcx', args)
+            if args.strava:
+                upload_strava(tracks, args)
 
 
         else:
