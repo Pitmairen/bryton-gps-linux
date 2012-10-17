@@ -77,16 +77,15 @@ def print_summary(tracks):
 
     for t in tracks:
 
-        print_track(t)
+        print_summary(t.summary)
 
 
-def print_track(t):
+def print_summary(s):
 
     ts = datetime.datetime.fromtimestamp
-    s = t.summary
 
     print '==================================================='
-    print ts(t.timestamp)
+    print ts(s.start)
     print '{} - {} ({})'.format(ts(s.start), ts(s.end),
                                 datetime.timedelta(seconds=s.ride_time))
 
