@@ -73,7 +73,7 @@ def print_history(history):
 
 
 
-def print_summary(tracks):
+def print_summaries(tracks):
 
     for t in tracks:
 
@@ -245,7 +245,7 @@ def main():
             tracks = get_tracks(history, args.tracks)
 
             if args.summary:
-                print_summary(tracks)
+                print_summaries(tracks)
                 return 0
 
             if args.gpx:
