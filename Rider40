@@ -309,9 +309,9 @@ Repeating from offset 0x83000
 ----------------------------
 1A    2 | UI16 | Calories
 ----------------------------
-1C    2 | UI32 | Ride time in seconds. The time you have been moving.
+1C    4 | UI32 | Ride time in seconds. The time you have been moving.
 ----------------------------
-1E   24 |      | Unknown, seems to be filled with 0
+20   24 |      | Unknown, seems to be filled with 0
 ----------------------------
 
 
