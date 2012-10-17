@@ -118,9 +118,15 @@ class Track(object):
 
     @cached_property
     def summary(self):
-        buf = self.device.read_from_offset(OFFSET_SUMMARIES +
-                                           self._offset_summary)
-        return _read_summary(buf)
+        return self._read_summaries[0]
+
+
+    @cached_property
+    def lap_summaries(self):
+
+        if self.lap_count == 0:
+            return [self._read_summaries[0]]
+        return self._read_summaries[1]
 
 
     @cached_property
@@ -135,6 +141,42 @@ class Track(object):
             if remove_empty_track_segs and not tseg:
                 continue
             yield _merge_segments(tseg, lseg)
+
+
+    @cached_property
+    def _read_summaries(self):
+
+        buf = None
+        laps = []
+
+        if self._offset_laps is not None:
+
+            buf = self.device.read_from_offset(OFFSET_SUMMARIES +
+                                               self._offset_laps)
+            laps = self._read_laps(buf)
+
+        summary_offset = OFFSET_SUMMARIES + self._offset_summary
+
+        if buf is None or buf.rel_offset + buf.abs_offset != summary_offset:
+
+            if buf is not None:
+                warnings.warn('Unexpected summary offset', RuntimeWarning)
+
+            buf = self.device.read_from_offset(OFFSET_SUMMARIES +
+                                               self._offset_summary)
+
+        return _read_summary(buf), laps
+
+
+    def _read_laps(self, buf):
+
+        laps = []
+        for i in range(self.lap_count):
+
+            laps.append(_read_summary(buf))
+            buf.set_offset(56)
+
+        return laps
 
 
 
@@ -530,8 +572,6 @@ def _merge_segments(track_seg, log_seg):
 
     if l:
         yield _point(l[0], None)
-
-
 
 
 
