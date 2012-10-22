@@ -476,7 +476,7 @@ def _read_logpoints_format_3(buf, time, count):
         lp = LogPoint(
             timestamp=time,
             speed=buf.uint8_from(0x00) / 8.0 * 60 * 60 / 1000,
-            temperature=buf.uint16_from(0x03) / 10.0,
+            temperature=buf.int16_from(0x03) / 10.0,
             airpressure=buf.uint16_from(0x05) * 2.0
         )
 
