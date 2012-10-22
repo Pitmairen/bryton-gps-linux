@@ -515,13 +515,16 @@ Segment types: (Not completely sure about this.)
 
 Logpoint format:
 
-It seems like there is atleast two different formats
+It seems like there is atleast three different formats
 for storing the logpoints. It probably depends on what kind of
 sensors are used. It is probably atleast one format more for storing
 power data.
 
 0x7104:
   Stores: speed, temperature, airpressure, 1 uknown
+
+0x7504:
+  Stores: speed, unknown, temperature, airpressure, unknown.
 
 0x7704:
   Stores: speed, temperature, airpressure, heartrate,
@@ -556,6 +559,28 @@ Logpoint (Format 0x7704, 8 bytes)
 ------------------------------
 07    1 |      | Unknown
 ------------------------------
+
+
+
+Logpoint (Format 0x7504, 7 bytes)
+============================
+ Bytes  | Type | Description
+----------------------------
+00    1 | UI8  | This seems to be the distance traveled in the last 8 seconds.
+        |      | In meters. This is used to calculate the speed.
+        |      | value / 8 * 60 * 60 / 1000 = speed in kph
+------------------------------
+01    1 | UI8  | Unknown, probably heartrate.
+------------------------------
+02    2 | I16  | The temperature in Celcius. Devide by 10 to get the value.
+------------------------------
+04    2 | UI16 | The barometric pressure. Multiply by 2 to get the value.
+        |      | In Pascal i think.
+------------------------------
+06    1 |      | Unknown
+------------------------------
+
+
 
 
 Logpoint (Format 0x7104, 6 bytes)
