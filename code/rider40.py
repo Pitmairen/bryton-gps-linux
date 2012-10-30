@@ -460,9 +460,12 @@ def _read_logpoints_format_1(buf, time, count):
 
     for i in range(count):
 
+        speed = buf.uint8_from(0x00)
+        speed = speed / 8.0 * 60 * 60 / 1000 if speed != 0xff else 0
+
         lp = LogPoint(
             timestamp=time,
-            speed=buf.uint8_from(0x00) / 8.0 * 60 * 60 / 1000,
+            speed=speed,
             temperature=buf.int16_from(0x01) / 10.0,
             airpressure=buf.uint16_from(0x03) * 2.0
         )
@@ -484,9 +487,12 @@ def _read_logpoints_format_2(buf, time, count):
 
     for i in range(count):
 
+        speed = buf.uint8_from(0x00)
+        speed = speed / 8.0 * 60 * 60 / 1000 if speed != 0xff else 0
+
         lp = LogPoint(
             timestamp=time,
-            speed=buf.uint8_from(0x00) / 8.0 * 60 * 60 / 1000,
+            speed=speed,
             temperature=buf.int16_from(0x02) / 10.0,
             airpressure=buf.uint16_from(0x04) * 2.0
         )
@@ -513,9 +519,12 @@ def _read_logpoints_format_3(buf, time, count):
 
     for i in range(count):
 
+        speed = buf.uint8_from(0x00)
+        speed = speed / 8.0 * 60 * 60 / 1000 if speed != 0xff else 0
+
         lp = LogPoint(
             timestamp=time,
-            speed=buf.uint8_from(0x00) / 8.0 * 60 * 60 / 1000,
+            speed=speed,
             temperature=buf.int16_from(0x03) / 10.0,
             airpressure=buf.uint16_from(0x05) * 2.0
         )
