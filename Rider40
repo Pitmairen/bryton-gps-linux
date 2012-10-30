@@ -419,13 +419,29 @@ Segment types: (Not completely sure about this.)
 
 
 
+
+
+
+Trackpoint formats:
+
+
+0x0140:
+  Stores: Time since last point, Elevation diff, lon diff, lat diff
+
+0x0440:
+  Stores: Time since last point, Elevation diff, lon diff, lat diff.
+  Seems to be used when a speed sensor is active.
+
+
+
+
 Then each track points follows
 
-GPS track point (6 bytes)
+GPS track point (Format 0x0140, 6 bytes)
 ============================
  Bytes  | Type | Description
 ----------------------------
-00    1 | I8   | I'm not sure what this value is but it is used to
+00    1 | UI8  | I'm not sure what this value is but it is used to
         |      | calculate the time of the track point.
         |      | Devide this value by 4 to get the number of 
         |      | seconds since the last track point.
@@ -441,6 +457,28 @@ GPS track point (6 bytes)
         |      | This value is added to the start latitude from
         |      | the header above and saved for the next point.
 ------------------------------
+
+
+
+GPS track point (Format 0x0440, 6 bytes)
+============================
+ Bytes  | Type | Description
+----------------------------
+00    1 | UI8  | seconds since the last track point.
+------------------------------
+01    1 | I8   | Elevation difference since last point.
+        |      | Devide by 10 to get value in meters.
+------------------------------
+02    2 | I16  | Longitude difference from the last point.
+        |      | This value is added to the start longitude from
+        |      | the header above and saved for the next point.
+------------------------------
+04    2 | I16  | Latitude difference from the last point.
+        |      | This value is added to the start latitude from
+        |      | the header above and saved for the next point.
+------------------------------
+
+
 
 
 

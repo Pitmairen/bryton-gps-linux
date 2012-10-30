@@ -333,22 +333,30 @@ def _read_trackpoint_segment(buf):
 
     format = buf.uint16_from(0x18)
 
-    if format != 0x0140:
-        raise RuntimeError('Unknown trackpoint format. '
-                           'It can probably easily be fixed if test data '
-                           'is provided.')
-
     buf.set_offset(0x28)
 
     if count > 0:
-        s.extend(_read_trackpoints(buf, s.timestamp, lon_start, lat_start,
-                                   elevation_start, count))
+
+        if format == 0x0140:
+            track_points = _read_trackpoints_format_1(buf, s.timestamp,
+                                                      lon_start, lat_start,
+                                                      elevation_start, count)
+        elif format == 0x0440:
+            track_points = _read_trackpoints_format_2(buf, s.timestamp,
+                                                      lon_start, lat_start,
+                                                      elevation_start, count)
+        else:
+            raise RuntimeError('Unknown trackpoint format. '
+                               'It can probably easily be fixed if test data '
+                               'is provided.')
+
+        s.extend(track_points)
 
     return s, next_offset
 
 
 
-def _read_trackpoints(buf, time, lon, lat, ele, count):
+def _read_trackpoints_format_1(buf, time, lon, lat, ele, count):
 
     track_points = []
     track_points.append(TrackPoint(
@@ -361,6 +369,38 @@ def _read_trackpoints(buf, time, lon, lat, ele, count):
     for i in range(count):
 
         time += buf.uint8_from(0) / 4
+        ele += buf.int8_from(0x1) / 10.0
+        lon += buf.int16_from(0x02)
+        lat += buf.int16_from(0x04)
+
+        track_points.append(TrackPoint(
+            timestamp=time,
+            longitude=lon / 1000000.0,
+            latitude=lat / 1000000.0,
+            elevation=ele
+        ))
+
+
+        buf.set_offset(0x6)
+
+
+    return track_points
+
+
+
+def _read_trackpoints_format_2(buf, time, lon, lat, ele, count):
+
+    track_points = []
+    track_points.append(TrackPoint(
+        timestamp=time,
+        longitude=lon / 1000000.0,
+        latitude=lat / 1000000.0,
+        elevation=ele
+    ))
+
+    for i in range(count):
+
+        time += buf.uint8_from(0)
         ele += buf.int8_from(0x1) / 10.0
         lon += buf.int16_from(0x02)
         lat += buf.int16_from(0x04)
