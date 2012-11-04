@@ -155,7 +155,8 @@ def _read_trackpoint_segment(buf):
 
 
     format = buf.uint16_from(0x18)
-    if format != 0x0161 and (count == 0 and format not in [0x0140, 0x0141]):
+    if format not in [0x0160, 0x0161] and \
+            (count == 0 and format not in [0x0140, 0x0141]):
         raise RuntimeError('Unknown trackpoint format. '
                            'It can probably easily be fixed if test data '
                            'is provided.')
