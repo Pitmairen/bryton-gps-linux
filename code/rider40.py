@@ -497,9 +497,9 @@ def _read_logpoints_format_2(buf, time, count):
             airpressure=buf.uint16_from(0x04) * 2.0
         )
 
-        # hr = buf.uint8_from(0x01)
-        # if hr != 0xff:
-        #     lp.heartrate = hr
+        hr = buf.uint8_from(0x01)
+        if hr != 0xff:
+            lp.heartrate = hr
 
 
         log_points.append(lp)
