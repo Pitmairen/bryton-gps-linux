@@ -183,7 +183,11 @@ def _read_trackpoints(buf, time, lon, lat, ele, count):
     for i in range(count):
 
         time += buf.uint8_from(0x5)
-        # ele = buf.int8_from(0x4)
+
+        cur_ele = buf.int8_from(0x4)
+        if cur_ele != -1 and cur_ele != 0:
+            ele = (cur_ele - 10) * 10.0
+
         lon += buf.int16_from(0x00)
         lat += buf.int16_from(0x02)
 
@@ -197,6 +201,7 @@ def _read_trackpoints(buf, time, lon, lat, ele, count):
 
         buf.set_offset(0x6)
 
+    _smooth_elevation(track_points)
 
     return track_points
 
@@ -251,4 +256,20 @@ def _read_logpoints(buf, time, count):
 
 
     return log_points
+
+
+
+def _smooth_elevation(track_points):
+
+    ele_stack = []
+    for p in track_points:
+
+        ele_stack.append(p.elevation)
+
+        if len(ele_stack) == 30:
+            p.elevation = sum(ele_stack) / 30
+            ele_stack.pop(0)
+        else:
+            p.elevation = sum(ele_stack) / len(ele_stack)
+
 
