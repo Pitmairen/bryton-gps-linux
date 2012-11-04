@@ -52,11 +52,11 @@ Repeating blocks of 256 bytes
 ----------------------------
 48    4 | UI32 | Offset to end of a last POI
 ----------------------------
-4C    4 | UI32 | Unknown, Size left for unknown data?
+4C    4 | UI32 | Size left for Bryton Workouts and Tests
 ----------------------------
-50    4 | UI32 | Offset to start of unknown data
+50    4 | UI32 | Offset to start Bryton Workouts and Tests
 ----------------------------
-54    4 | UI32 | Offset to end of a unknown data
+54    4 | UI32 | Offset to end Offset to start Bryton Workouts and Tests
 ----------------------------
 58    4 | UI32 | ? Space left for tracks?
 ----------------------------
@@ -64,23 +64,23 @@ Repeating blocks of 256 bytes
 ----------------------------
 60    4 | UI32 | Offset to the end of the last track in the history
 ----------------------------
-64    4 |      | Unknown
+64    4 |      | space left for laps
 ----------------------------
 68    4 | UI32 | Offset to the start of the first lap in the history
 ----------------------------
 6C    4 | UI32 | Offset to the start of a last lap in the history
 ----------------------------
-70    4 |      | Unknown
+70    4 |      | Space left for workouts
 ----------------------------
-74    4 | UI32 | Offset to start of unknown data
+74    4 | UI32 | Offset to start of workout descriptions
 ----------------------------
-78    4 | UI32 | Offset to end of unknown data
+78    4 | UI32 | Offset to end of of workout descriptions
 ----------------------------
-7C    4 |      | Unknown
+7C    4 |      | Space left for workout log data
 ----------------------------
-80    4 | UI32 | Offset to start of unknown data
+80    4 | UI32 | Offset to start of data related to workouts (Interval logs?)
 ----------------------------
-84    4 | UI32 | Offset to end of unknown data
+84    4 | UI32 | Offset to end of data related to workouts (Interval logs?)
 ----------------------------
 88    4 |      | Unknown, possibly number of bytes left for trackpoints
 ----------------------------
@@ -94,11 +94,11 @@ Repeating blocks of 256 bytes
 ----------------------------
 9C    4 | UI32 | Offset to start of a logpoint
 ----------------------------
-A0    4 |      | Unknown
+A0    4 |      | space left for settings for tracks
 ----------------------------
-A4    4 | UI32 | Offset to start of unknown data
+A4    4 | UI32 | Offset to start of settings for each track
 ----------------------------
-A8    4 | UI32 | Offset to end of unknown data
+A8    4 | UI32 | Offset to end of of settings for each track
 -----------------------------------------------------
 AC    4 | UI32 | Offset to start of unknown data
 ----------------------------
@@ -309,9 +309,9 @@ Repeating from offset 0x83000
 ----------------------------
 1A    2 | UI16 | Calories
 ----------------------------
-1C    2 | UI32 | Ride time in seconds. The time you have been moving.
+1C    4 | UI32 | Ride time in seconds. The time you have been moving.
 ----------------------------
-1E   24 |      | Unknown, seems to be filled with 0
+20   24 |      | Unknown, seems to be filled with 0
 ----------------------------
 
 
@@ -419,13 +419,29 @@ Segment types: (Not completely sure about this.)
 
 
 
+
+
+
+Trackpoint formats:
+
+
+0x0140:
+  Stores: Time since last point, Elevation diff, lon diff, lat diff
+
+0x0440:
+  Stores: Time since last point, Elevation diff, lon diff, lat diff.
+  Seems to be used when a speed sensor is active.
+
+
+
+
 Then each track points follows
 
-GPS track point (6 bytes)
+GPS track point (Format 0x0140, 6 bytes)
 ============================
  Bytes  | Type | Description
 ----------------------------
-00    1 | I8   | I'm not sure what this value is but it is used to
+00    1 | UI8  | I'm not sure what this value is but it is used to
         |      | calculate the time of the track point.
         |      | Devide this value by 4 to get the number of 
         |      | seconds since the last track point.
@@ -441,6 +457,28 @@ GPS track point (6 bytes)
         |      | This value is added to the start latitude from
         |      | the header above and saved for the next point.
 ------------------------------
+
+
+
+GPS track point (Format 0x0440, 6 bytes)
+============================
+ Bytes  | Type | Description
+----------------------------
+00    1 | UI8  | seconds since the last track point.
+------------------------------
+01    1 | I8   | Elevation difference since last point.
+        |      | Devide by 10 to get value in meters.
+------------------------------
+02    2 | I16  | Longitude difference from the last point.
+        |      | This value is added to the start longitude from
+        |      | the header above and saved for the next point.
+------------------------------
+04    2 | I16  | Latitude difference from the last point.
+        |      | This value is added to the start latitude from
+        |      | the header above and saved for the next point.
+------------------------------
+
+
 
 
 
@@ -515,13 +553,16 @@ Segment types: (Not completely sure about this.)
 
 Logpoint format:
 
-It seems like there is atleast two different formats
+It seems like there is atleast three different formats
 for storing the logpoints. It probably depends on what kind of
 sensors are used. It is probably atleast one format more for storing
 power data.
 
 0x7104:
   Stores: speed, temperature, airpressure, 1 uknown
+
+0x7504:
+  Stores: speed, unknown, temperature, airpressure, unknown.
 
 0x7704:
   Stores: speed, temperature, airpressure, heartrate,
@@ -556,6 +597,28 @@ Logpoint (Format 0x7704, 8 bytes)
 ------------------------------
 07    1 |      | Unknown
 ------------------------------
+
+
+
+Logpoint (Format 0x7504, 7 bytes)
+============================
+ Bytes  | Type | Description
+----------------------------
+00    1 | UI8  | This seems to be the distance traveled in the last 8 seconds.
+        |      | In meters. This is used to calculate the speed.
+        |      | value / 8 * 60 * 60 / 1000 = speed in kph
+------------------------------
+01    1 | UI8  | Unknown, probably heartrate.
+------------------------------
+02    2 | I16  | The temperature in Celcius. Devide by 10 to get the value.
+------------------------------
+04    2 | UI16 | The barometric pressure. Multiply by 2 to get the value.
+        |      | In Pascal i think.
+------------------------------
+06    1 |      | Unknown
+------------------------------
+
+
 
 
 Logpoint (Format 0x7104, 6 bytes)
@@ -635,6 +698,100 @@ Zone types:
   Maximum Aerobic Power. Type 3 in bdx file
 0x74:
   Functional Threshold Power (FTP). Type 4 in bdx file.
+
+
+
+
+
+
+
+
+
+
+
+
+Workout descriptions:
+
+Starting at offset 0x9F000
+
+
+Workout Interval (24 bytes)
+============================
+00    1 |      | Target type = (value >> 4) (HR, MHR %, LTHR %, ...)
+        |      | Interval Type = value & 0xF (Warmup, Work, Cool down, ...)
+------------------------------
+01    1 |      | Duration type id.
+------------------------------
+02    2 | UI16 | Duration of the interval. This value depends on the 
+        |      | duration type id. It can be seconds, meters, heartrate
+        |      | and other values.
+------------------------------
+04    4 | UI32 | Offset from the start of the intervals to the
+        |      | end of this interval. 0xffffffff for the last interval
+        |      | in a workout.
+------------------------------
+08    5 |      | Unknown
+------------------------------
+0D    1 | UI8  | Minimum target value. This depends on Target type.
+        |      | It can be HR, % of MHR, Speed, ...
+        |      | See offset 12.
+------------------------------
+0E    1 | UI8  | Maximum target value. This depends on Target type.
+        |      | It can be HR, % of MHR, Speed, ...
+        |      | See offset 12.
+------------------------------
+0F    3 |      | Unknown
+------------------------------
+12    1 |      | This is used when one of the min/max target values
+        |      | is greater than 256.
+        |      | (value >> 4) * 256 + value(offset 0E) = max target value
+        |      | (value & 0xF) * 256 + value(offset 0D) = min target value
+------------------------------
+03    5 |      | Unknown
+------------------------------
+
+
+
+Interval Types:
+0 - Other
+1 - Warm Up
+2 - Work
+3 - Steady
+4 - Cool Down
+5 - Recovery
+6 - Sprint
+
+
+Duration Types:
+ 0 - manual
+ 1 - Distance
+ 2 - Time
+ 3 - Increasing Max Heart Rate
+ 4 - Increasing Max Heart Rate Percentage
+ 5 - Decreasing Min Heart Rate
+ 6 - Decreasing Min Heart Rate Percentage
+ 7 - Calorie
+10 - Increasing Max Cadence
+11 - Decreasing Min Cadence
+12 - Increasing Max Speed
+13 - Decreasing Min Speed
+
+
+Target Types:
+ 0 - None
+ 1 - Speed
+ 2 - Cadence
+ 3 - Heart Rate
+ 4 - Calorie
+ 8 - Power
+ 9 - MHR Percentage
+10 - LTHR percentage
+12 - MAP (Maximum Aerobic Power) Percentage
+13 - FTP (Functional Threshold Power) Percentage
+
+
+
+
 
 
 

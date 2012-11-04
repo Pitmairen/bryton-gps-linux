@@ -133,6 +133,19 @@ def create_lap_ext(sum, parent, ns=aext_ns):
         xml.SubElement(lx, ns('MaxWatts')).text = format(sum.watts.max, 'd')
 
 
+def create_laps(track, parent, ns=tcx_ns):
+
+    for sum, segments in _get_lap_trackpoints(track):
+
+        lap = create_lap(sum, parent, ns)
+
+        for seg in segments:
+            if seg:
+                create_track(seg, lap, ns)
+
+        create_lap_ext(sum, lap)
+
+
 
 def track_to_tcx(track, pretty=False):
 
@@ -154,13 +167,8 @@ def track_to_tcx(track, pretty=False):
     xml.SubElement(activity, ns('Id')).text = \
         format_timestamp(track.timestamp)
 
-    lap = create_lap(track.summary, activity, ns)
 
-    for seg in track.merged_segments():
-
-        create_track(seg, lap, ns)
-    create_lap_ext(track.summary, lap)
-
+    create_laps(track, activity, ns)
 
     if pretty:
         indent_element_tree(root, ws=' ')
@@ -174,4 +182,26 @@ def track_to_tcx(track, pretty=False):
     return "<?xml version='1.0' encoding='utf-8'?>\n" + out
 
 
+def _get_lap_trackpoints(track):
+
+    summaries = track.lap_summaries
+
+    lap = (summaries.pop(0), [[]])
+    laps = [lap]
+
+    for seg in track.merged_segments():
+
+        for tp, lp in seg:
+
+            timestamp = tp.timestamp if tp is not None else lp.timestamp
+
+            if timestamp < lap[0].end or not summaries:
+                lap[1][-1].append((tp, lp))
+            else:
+                lap = (summaries.pop(0), [[]])
+                laps.append(lap)
+
+        lap[1].append([])
+
+    return laps
 

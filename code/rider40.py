@@ -118,9 +118,15 @@ class Track(object):
 
     @cached_property
     def summary(self):
-        buf = self.device.read_from_offset(OFFSET_SUMMARIES +
-                                           self._offset_summary)
-        return _read_summary(buf)
+        return self._read_summaries[0]
+
+
+    @cached_property
+    def lap_summaries(self):
+
+        if self.lap_count == 0:
+            return [self._read_summaries[0]]
+        return self._read_summaries[1]
 
 
     @cached_property
@@ -135,6 +141,42 @@ class Track(object):
             if remove_empty_track_segs and not tseg:
                 continue
             yield _merge_segments(tseg, lseg)
+
+
+    @cached_property
+    def _read_summaries(self):
+
+        buf = None
+        laps = []
+
+        if self._offset_laps is not None:
+
+            buf = self.device.read_from_offset(OFFSET_SUMMARIES +
+                                               self._offset_laps)
+            laps = self._read_laps(buf)
+
+        summary_offset = OFFSET_SUMMARIES + self._offset_summary
+
+        if buf is None or buf.rel_offset + buf.abs_offset != summary_offset:
+
+            if buf is not None:
+                warnings.warn('Unexpected summary offset', RuntimeWarning)
+
+            buf = self.device.read_from_offset(OFFSET_SUMMARIES +
+                                               self._offset_summary)
+
+        return _read_summary(buf), laps
+
+
+    def _read_laps(self, buf):
+
+        laps = []
+        for i in range(self.lap_count):
+
+            laps.append(_read_summary(buf))
+            buf.set_offset(56)
+
+        return laps
 
 
 
@@ -291,22 +333,30 @@ def _read_trackpoint_segment(buf):
 
     format = buf.uint16_from(0x18)
 
-    if format != 0x0140:
-        raise RuntimeError('Unknown trackpoint format. '
-                           'It can probably easily be fixed if test data '
-                           'is provided.')
-
     buf.set_offset(0x28)
 
     if count > 0:
-        s.extend(_read_trackpoints(buf, s.timestamp, lon_start, lat_start,
-                                   elevation_start, count))
+
+        if format == 0x0140:
+            track_points = _read_trackpoints_format_1(buf, s.timestamp,
+                                                      lon_start, lat_start,
+                                                      elevation_start, count)
+        elif format == 0x0440:
+            track_points = _read_trackpoints_format_2(buf, s.timestamp,
+                                                      lon_start, lat_start,
+                                                      elevation_start, count)
+        else:
+            raise RuntimeError('Unknown trackpoint format. '
+                               'It can probably easily be fixed if test data '
+                               'is provided.')
+
+        s.extend(track_points)
 
     return s, next_offset
 
 
 
-def _read_trackpoints(buf, time, lon, lat, ele, count):
+def _read_trackpoints_format_1(buf, time, lon, lat, ele, count):
 
     track_points = []
     track_points.append(TrackPoint(
@@ -319,6 +369,38 @@ def _read_trackpoints(buf, time, lon, lat, ele, count):
     for i in range(count):
 
         time += buf.uint8_from(0) / 4
+        ele += buf.int8_from(0x1) / 10.0
+        lon += buf.int16_from(0x02)
+        lat += buf.int16_from(0x04)
+
+        track_points.append(TrackPoint(
+            timestamp=time,
+            longitude=lon / 1000000.0,
+            latitude=lat / 1000000.0,
+            elevation=ele
+        ))
+
+
+        buf.set_offset(0x6)
+
+
+    return track_points
+
+
+
+def _read_trackpoints_format_2(buf, time, lon, lat, ele, count):
+
+    track_points = []
+    track_points.append(TrackPoint(
+        timestamp=time,
+        longitude=lon / 1000000.0,
+        latitude=lat / 1000000.0,
+        elevation=ele
+    ))
+
+    for i in range(count):
+
+        time += buf.uint8_from(0)
         ele += buf.int8_from(0x1) / 10.0
         lon += buf.int16_from(0x02)
         lat += buf.int16_from(0x04)
@@ -355,8 +437,10 @@ def _read_logpoint_segment(buf):
 
         if format == 0x7104:
             log_points = _read_logpoints_format_1(buf, s.timestamp, count)
-        elif format == 0x7704:
+        elif format == 0x7504:
             log_points = _read_logpoints_format_2(buf, s.timestamp, count)
+        elif format == 0x7704:
+            log_points = _read_logpoints_format_3(buf, s.timestamp, count)
         else:
             raise RuntimeError('Unknown logpoint format. You are probably '
                                'using a sensor that has not been tested '
@@ -376,9 +460,12 @@ def _read_logpoints_format_1(buf, time, count):
 
     for i in range(count):
 
+        speed = buf.uint8_from(0x00)
+        speed = speed / 8.0 * 60 * 60 / 1000 if speed != 0xff else 0
+
         lp = LogPoint(
             timestamp=time,
-            speed=buf.uint8_from(0x00) / 8.0 * 60 * 60 / 1000,
+            speed=speed,
             temperature=buf.int16_from(0x01) / 10.0,
             airpressure=buf.uint16_from(0x03) * 2.0
         )
@@ -393,16 +480,52 @@ def _read_logpoints_format_1(buf, time, count):
     return log_points
 
 
+
 def _read_logpoints_format_2(buf, time, count):
 
     log_points = []
 
     for i in range(count):
 
+        speed = buf.uint8_from(0x00)
+        speed = speed / 8.0 * 60 * 60 / 1000 if speed != 0xff else 0
+
         lp = LogPoint(
             timestamp=time,
-            speed=buf.uint8_from(0x00) / 8.0 * 60 * 60 / 1000,
-            temperature=buf.uint16_from(0x03) / 10.0,
+            speed=speed,
+            temperature=buf.int16_from(0x02) / 10.0,
+            airpressure=buf.uint16_from(0x04) * 2.0
+        )
+
+        # hr = buf.uint8_from(0x01)
+        # if hr != 0xff:
+        #     lp.heartrate = hr
+
+
+        log_points.append(lp)
+
+        time += 4
+
+        buf.set_offset(0x7)
+
+
+    return log_points
+
+
+
+def _read_logpoints_format_3(buf, time, count):
+
+    log_points = []
+
+    for i in range(count):
+
+        speed = buf.uint8_from(0x00)
+        speed = speed / 8.0 * 60 * 60 / 1000 if speed != 0xff else 0
+
+        lp = LogPoint(
+            timestamp=time,
+            speed=speed,
+            temperature=buf.int16_from(0x03) / 10.0,
             airpressure=buf.uint16_from(0x05) * 2.0
         )
 
@@ -530,8 +653,6 @@ def _merge_segments(track_seg, log_seg):
 
     if l:
         yield _point(l[0], None)
-
-
 
 
 

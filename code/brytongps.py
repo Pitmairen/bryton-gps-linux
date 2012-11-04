@@ -6,13 +6,15 @@ import argparse
 import warnings
 import datetime
 import os
-
+import getpass
+import time
 
 import rider40
 import rider20
 import common
 import gpx
 import tcx
+import strava
 
 
 
@@ -75,20 +77,19 @@ def print_history(history):
 
 
 
-def print_summary(tracks):
+def print_summaries(tracks):
 
     for t in tracks:
 
-        print_track(t)
+        print_summary(t.summary)
 
 
-def print_track(t):
+def print_summary(s):
 
     ts = datetime.datetime.fromtimestamp
-    s = t.summary
 
     print '==================================================='
-    print ts(t.timestamp)
+    print ts(s.start)
     print '{} - {} ({})'.format(ts(s.start), ts(s.end),
                                 datetime.timedelta(seconds=s.ride_time))
 
@@ -137,6 +138,43 @@ def export_tracks(tracks, export_func, file_ext, args):
 
 
 
+def upload_strava(tracks, args):
+
+    if args.strava_email is None:
+        print 'Missing email for strava.com'
+        return
+
+    password = args.strava_password
+    if password is None:
+        password = getpass.getpass('Strava.com password:')
+
+
+    uploader = strava.StravaUploader()
+
+    try:
+        print 'Authenticating to strava.com'
+        uploader.authenticate(args.strava_email, password)
+    except strava.StravaError, e:
+        print 'StravaError:', e.reason
+        return
+
+    for t in tracks:
+
+        try:
+            print 'Uploading track: {}'.format(t.name)
+            upload = uploader.upload(t)
+
+            while not upload.finished:
+                time.sleep(3)
+                p = upload.check_progress()
+
+            print 'Uploaded OK'
+
+
+
+        except strava.StravaError, e:
+            print 'StravaError:', e.reason
+
 
 
 def options():
@@ -170,6 +208,16 @@ def options():
     p.add_argument('--no-whitespace', action='store_false',
                    help='No unnecessary whitespace in exported files.')
 
+    p.add_argument('--strava', action='store_true',
+                   help='Upload tracks to strava.com')
+
+    p.add_argument('--strava-email', nargs='?',
+                   help='strava.com email')
+
+    p.add_argument('--strava-password', nargs='?',
+                   help='strava.com password')
+
+
     return p
 
 
@@ -201,7 +249,7 @@ def main():
             tracks = get_tracks(history, args.tracks)
 
             if args.summary:
-                print_summary(tracks)
+                print_summaries(tracks)
                 return 0
 
             if args.gpx:
@@ -210,6 +258,8 @@ def main():
                 export_tracks(tracks, gpx.track_to_garmin_gpxx, 'gpx', args)
             if args.tcx:
                 export_tracks(tracks, tcx.track_to_tcx, 'tcx', args)
+            if args.strava:
+                upload_strava(tracks, args)
 
 
         else:
