@@ -4,7 +4,7 @@ import warnings
 import rider40
 
 from utils import cached_property
-
+from common import AvgMax
 
 
 OFFSET_TRACKPOINTS = 0x36000 + 24
@@ -60,10 +60,46 @@ class Track(rider40.Track):
 
 
     @cached_property
-    def summary(self):
-        buf = self.device.read_from_offset(OFFSET_SUMMARIES +
-                                           self._offset_summary)
-        return rider40._read_summary(buf)
+    def _read_summaries(self):
+
+        buf = None
+        laps = []
+
+        if self._offset_laps is not None:
+
+            buf = self.device.read_from_offset(OFFSET_SUMMARIES +
+                                               self._offset_laps)
+            laps = self._read_laps(buf)
+
+        summary_offset = OFFSET_SUMMARIES + self._offset_summary
+
+        if buf is None or buf.rel_offset + buf.abs_offset != summary_offset:
+
+            if buf is not None:
+                warnings.warn('Unexpected summary offset', RuntimeWarning)
+
+            buf = self.device.read_from_offset(OFFSET_SUMMARIES +
+                                               self._offset_summary)
+
+        summary = rider40._read_summary(buf)
+
+        if laps and laps[-1].end < summary.end:
+            laps.append(_calculate_last_lap(self, laps, summary))
+
+        return summary, laps
+
+
+    def _read_laps(self, buf):
+
+        laps = []
+        for i in range(self.lap_count):
+
+            laps.append(rider40._read_summary(buf))
+            buf.set_offset(32)
+
+        return laps
+
+
 
 
 
@@ -81,7 +117,7 @@ def read_history(device):
 
         t = Track(device)
         t.timestamp = buf.uint32_from(0x00)
-        t.name = buf.str_from(0x04, 16) # hardcoded length
+        t.name = buf.str_from(0x04, 16)  # hardcoded length
 
         t._offset_trackpoints = buf.uint32_from(0x88)
 
@@ -272,5 +308,66 @@ def _smooth_elevation(track_points):
             ele_stack.pop(0)
         else:
             p.elevation = sum(ele_stack) / len(ele_stack)
+
+
+
+def _calculate_last_lap(track, laps, summary):
+
+    laps = laps[:]
+
+    last_lap = ll = rider40.Summary()
+    ll.start = laps[-1].end
+    ll.end = summary.end
+    ll.distance = summary.distance
+    ll.ride_time = summary.ride_time
+    ll.calories = summary.calories
+    ll.altitude_gain = summary.altitude_gain
+    ll.altitude_loss = summary.altitude_loss
+
+
+    def _pop_lap():
+        lap = l = laps.pop(0)
+        ll.distance -= l.distance
+        ll.ride_time = l.ride_time
+        ll.calories -= l.calories
+        ll.altitude_gain -= l.altitude_gain
+        ll.altitude_loss -= l.altitude_loss
+        return lap
+
+
+    speed = []
+    hr = []
+    cadence = []
+
+    lap = _pop_lap()
+
+    for seg in track.merged_segments():
+
+        for tp, lp in seg:
+
+            timestamp = tp.timestamp if tp is not None else lp.timestamp
+
+            if timestamp > last_lap.start:
+                if lp:
+                    if lp.speed is not None and lp.speed > 0:
+                        speed.append(lp.speed)
+                    if lp.heartrate is not None and lp.heartrate > 0:
+                        hr.append(lp.heartrate)
+                    if lp.cadence is not None and lp.cadence > 0:
+                        cadence.append(lp.cadence)
+
+            elif timestamp <= lap.end:
+                continue
+            else:
+                lap = _pop_lap()
+
+    if speed:
+        last_lap.speed = AvgMax(sum(speed) / len(speed), max(speed))
+    if hr:
+        last_lap.heartrate = AvgMax(sum(hr) / len(hr), max(hr))
+    if cadence:
+        last_lap.cadence = AvgMax(sum(cadence) / len(cadence), max(cadence))
+
+    return last_lap
 
 
