@@ -14,6 +14,7 @@ It currently has the following functionality:
 - Generate GPX (plain and Garmin extension) and TCX files.
 
 
+The code is released under the GPL v3 license.
 
 I have only access to a Rider40, but im interested in data from other
 devices. See dump.py for an example how to read the data from you device.

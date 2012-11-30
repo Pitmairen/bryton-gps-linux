@@ -1,3 +1,23 @@
+#
+# Copyright (C) 2012  Per Myren
+#
+# This file is part of Bryton-GPS-Linux
+#
+# Bryton-GPS-Linux is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Bryton-GPS-Linux is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Bryton-GPS-Linux.  If not, see <http://www.gnu.org/licenses/>.
+#
+
+
 
 This what i have currently figured out about the Rider40 device.
 
@@ -342,7 +362,7 @@ GPS trackpoints Offset 0xAB000
 
 Then the trackpoints follows
 
-The trackpoints are stored in segments. 
+The trackpoints are stored in segments.
 A new segment is created when the track is paused
 either by the pause button or automatically if the device is
 not moving for a period of time.
@@ -443,7 +463,7 @@ GPS track point (Format 0x0140, 6 bytes)
 ----------------------------
 00    1 | UI8  | I'm not sure what this value is but it is used to
         |      | calculate the time of the track point.
-        |      | Devide this value by 4 to get the number of 
+        |      | Devide this value by 4 to get the number of
         |      | seconds since the last track point.
 ------------------------------
 01    1 | I8   | Elevation difference since last point.
@@ -507,7 +527,7 @@ Log points Offset 0x121000
 
 Then the logpoints follows
 
-The logpoints are stored in segments. 
+The logpoints are stored in segments.
 A new segment is created when the track is paused
 either by the pause button or automatically if the device is
 not moving for a period of time.
@@ -538,7 +558,7 @@ Segment types: (Not completely sure about this.)
 0x06:
   Same as type 1 for the trackpoints.
   But it will continue to record into this segment
-  until it starts moving again. Then a segment 
+  until it starts moving again. Then a segment
   type 0x02070A00 may be started.
 
 0x0A:
@@ -576,7 +596,7 @@ Then each logpoint in the segment follows.
 
 The time of the first logpoint is the start time above.
 For all the other logpoints +4 seconds is added for each
-logpoint. 
+logpoint.
 
 Logpoint (Format 0x7704, 8 bytes)
 ============================
@@ -663,7 +683,7 @@ Settings data (152 bytes)
 ------------------------------
 0A    1 | UI8  | Bike Type and Bike Profile.
         |      | Biketype: floor(value/16) to get same value as in bdx files.
-        |      | Bike profile: value % 16 to get bike profile. 0 or 1 
+        |      | Bike profile: value % 16 to get bike profile. 0 or 1
 ------------------------------
 0B    1 | UI8  | Bike Weight. Devide by 10 to get value in in Kg.
 ------------------------------
@@ -722,7 +742,7 @@ Workout Interval (24 bytes)
 ------------------------------
 01    1 |      | Duration type id.
 ------------------------------
-02    2 | UI16 | Duration of the interval. This value depends on the 
+02    2 | UI16 | Duration of the interval. This value depends on the
         |      | duration type id. It can be seconds, meters, heartrate
         |      | and other values.
 ------------------------------
