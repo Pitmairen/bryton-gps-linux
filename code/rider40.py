@@ -301,7 +301,10 @@ def _read_trackpoint_segments(buf):
 
         segments.append(seg)
 
-        if seg.segment_type == SEGMENT_LAST:
+        # Usually the last segment have segment type SEGMENT_LAST,
+        # but sometimes this is not true, so we also check that
+        # if "next_offset" is 0xffffffff it was probably the last segment.
+        if seg.segment_type == SEGMENT_LAST or next_offset == 0xffffffff:
             break
 
 
