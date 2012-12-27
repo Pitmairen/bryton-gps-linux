@@ -414,6 +414,10 @@ GPS track point segment header
 
 Segment types: (Not completely sure about this.)
 
+These segment types are usually as described below, but sometimes
+it's not. I'm not sure if it's a bug in the device or not.
+
+
 0:
   This seems to be used when the device is starting to record
   after a pause or it is first started, but is still not moving.

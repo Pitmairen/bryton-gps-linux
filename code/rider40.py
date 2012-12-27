@@ -229,7 +229,7 @@ class _Segment(object):
     @segment_type.setter
     def segment_type(self, value):
         if value not in self._SEGMENT_TYPES:
-            raise RuntimeError('Unknown type ({:x}) for {}'.
+            raise RuntimeError('Unknown type ({0:x}) for {1}'.
                                format(value, self.__class__.__name__))
         self._segment_type = self._SEGMENT_TYPES.index(value)
 
@@ -301,7 +301,10 @@ def _read_trackpoint_segments(buf):
 
         segments.append(seg)
 
-        if seg.segment_type == SEGMENT_LAST:
+        # Usually the last segment have segment type SEGMENT_LAST,
+        # but sometimes this is not true, so we also check that
+        # if "next_offset" is 0xffffffff it was probably the last segment.
+        if seg.segment_type == SEGMENT_LAST or next_offset == 0xffffffff:
             break
 
 
@@ -342,7 +345,7 @@ def _read_trackpoint_segment(buf):
     s._offset_logpoints = buf.uint32_from(0x24)
 
     if s.segment_type == SEGMENT_BEFORE_MOVING and count > 0:
-        warnings.warn("Segment type {} is not expected to "
+        warnings.warn("Segment type {0} is not expected to "
                       "have any trackpoints".format(SEGMENT_BEFORE_MOVING),
                       RuntimeWarning)
 
