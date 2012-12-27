@@ -134,7 +134,7 @@ class DataBuffer(object):
 
 def _scsi_pack_cdb(cmd):
 
-    return struct.pack('{}B'.format(len(cmd)), *cmd)
+    return struct.pack('{0}B'.format(len(cmd)), *cmd)
 
 
 
@@ -174,7 +174,7 @@ class DeviceAccess(object):
             self.dev = open(self.dev_path, 'rb')
         except IOError as e:
             if e.errno == errno.EACCES:
-                raise RuntimeError('Failed to open device "{}" '
+                raise RuntimeError('Failed to open device "{0}" '
                                    '(Permission denied).'.format(
                                    self.dev_path))
             raise

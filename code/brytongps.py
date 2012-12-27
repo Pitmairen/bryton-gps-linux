@@ -78,7 +78,7 @@ def get_tracks(history, track_ids):
         try:
             tracks.append(history[int(id)])
         except (IndexError, TypeError):
-            raise RuntimeError('Invalid track_id {}'.format(id))
+            raise RuntimeError('Invalid track_id {0}'.format(id))
     return tracks
 
 
@@ -104,24 +104,24 @@ def print_summary(s):
 
     print '==================================================='
     print ts(s.start)
-    print '{} - {} ({})'.format(ts(s.start), ts(s.end),
-                                datetime.timedelta(seconds=s.ride_time))
+    print '{0} - {1} ({2})'.format(ts(s.start), ts(s.end),
+                                   datetime.timedelta(seconds=s.ride_time))
 
-    print ' Dist: {:.2f}Km'.format(s.distance / 1000.0)
-    print '  Cal: {}'.format(s.calories)
-    print '  Alt: {}m / {}m (gain/loss)'.format(s.altitude_gain,
-                                                s.altitude_loss)
-    print 'Speed: {}Kph / {}Kph (avg/max)'.format(s.speed.avg, s.speed.max)
+    print ' Dist: {0:.2f}Km'.format(s.distance / 1000.0)
+    print '  Cal: {0}'.format(s.calories)
+    print '  Alt: {0}m / {1}m (gain/loss)'.format(s.altitude_gain,
+                                                  s.altitude_loss)
+    print 'Speed: {0}Kph / {1}Kph (avg/max)'.format(s.speed.avg, s.speed.max)
 
     if s.heartrate is not None and s.heartrate.max > 0:
-        print '   Hr: {}bpm / {}bpm (avg/max)'.format(s.heartrate.avg,
-                                                      s.heartrate.max)
+        print '   Hr: {0}bpm / {1}bpm (avg/max)'.format(s.heartrate.avg,
+                                                        s.heartrate.max)
     if s.cadence is not None and s.cadence.max > 0:
-        print '  Cad: {}rpm / {}rpm (avg/max)'.format(s.cadence.avg,
-                                                      s.cadence.max)
+        print '  Cad: {0}rpm / {1}rpm (avg/max)'.format(s.cadence.avg,
+                                                        s.cadence.max)
     if s.watts is not None and s.watts.max > 0:
-        print 'Watts: {}/{} (avg/max)'.format(s.watts.avg,
-                                              s.watts.max)
+        print 'Watts: {0}/{1} (avg/max)'.format(s.watts.avg,
+                                                s.watts.max)
 
 
 
@@ -175,7 +175,7 @@ def upload_strava(tracks, args):
     for t in tracks:
 
         try:
-            print 'Uploading track: {}'.format(t.name)
+            print 'Uploading track: {0}'.format(t.name)
             upload = uploader.upload(t)
 
             while not upload.finished:

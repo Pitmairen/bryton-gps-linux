@@ -51,7 +51,7 @@ def open_device(path):
         return open(path, 'rb')
     except IOError as e:
         if e.errno == errno.EACCES:
-            raise RuntimeError('Failed to open device "{}" '
+            raise RuntimeError('Failed to open device "{0}" '
                                '(Permission denied).'.format(path))
 
         raise
@@ -59,7 +59,7 @@ def open_device(path):
 
 def pack_scsi_cmd(cmd):
 
-    return struct.pack('{}B'.format(len(cmd)), *cmd)
+    return struct.pack('{0}B'.format(len(cmd)), *cmd)
 
 
 def read_serial(dev):

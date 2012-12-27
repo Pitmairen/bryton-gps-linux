@@ -37,7 +37,7 @@ _from_ts = datetime.datetime.utcfromtimestamp
 
 
 def _ns(name, ns):
-    return '{{{}}}{}'.format(ns, name)
+    return '{{{0}}}{1}'.format(ns, name)
 
 
 def gpx_ns(name):
