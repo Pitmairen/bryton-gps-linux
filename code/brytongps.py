@@ -28,6 +28,7 @@ import getpass
 import time
 
 import rider40
+import rider35
 import common
 import gpx
 import tcx
@@ -56,10 +57,13 @@ def get_device(dev):
     if not data.startswith('Hera Data'):
         return None
 
-
     dev_id = data[16:16 + 4]
 
-    if dev_id != '1504':
+    if dev_id == '1504':
+        return rider40, rider40.Rider40(dev)
+    elif dev_id == '1000':
+        return rider35, rider35.Rider35(dev)
+    else:
         warnings.warn('Unknown device model.', RuntimeWarning)
 
     return rider40, rider40.Rider40(dev)
