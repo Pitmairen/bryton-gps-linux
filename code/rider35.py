@@ -297,6 +297,8 @@ def _read_logpoint_segment(buf):
 
         if format == 0x3304:
             log_points = _read_logpoints_format_1(buf, s.timestamp, count)
+        elif format == 0x3704:
+            log_points = _read_logpoints_format_2(buf, s.timestamp, count)
         else:
             raise RuntimeError('Unknown logpoint format. You are probably '
                                'using a sensor that has not been tested '
@@ -316,11 +318,14 @@ def _read_logpoints_format_1(buf, time, count):
 
     for i in range(count):
 
+        speed = buf.uint8_from(0x00)
+        speed = speed / 8.0 * 60 * 60 / 1000 if speed != 0xff else None
+
         lp = rider40.LogPoint(
             timestamp=time,
-            speed=buf.uint8_from(0x00) / 8.0 * 60 * 60 / 1000,
+            speed=speed,
             temperature=buf.int16_from(0x2) / 10.0,
-            airpressure=buf.int16_from(0x4) * 2.0,
+            airpressure=buf.uint16_from(0x4) * 2.0,
         )
 
 
@@ -333,6 +338,41 @@ def _read_logpoints_format_1(buf, time, count):
 
     return log_points
 
+
+
+def _read_logpoints_format_2(buf, time, count):
+
+    log_points = []
+
+    for i in range(count):
+
+        speed = buf.uint8_from(0x00)
+        speed = speed / 8.0 * 60 * 60 / 1000 if speed != 0xff else None
+
+        lp = rider40.LogPoint(
+            timestamp=time,
+            speed=speed,
+            temperature=buf.int16_from(0x3) / 10.0,
+            airpressure=buf.uint16_from(0x5) * 2.0,
+        )
+
+        cad = buf.uint8_from(0x01)
+        if cad != 0xff:
+            lp.cadence = cad
+
+        hr = buf.uint8_from(0x02)
+        if hr != 0xff:
+            lp.heartrate = hr
+
+
+        log_points.append(lp)
+
+        time += 4
+
+        buf.set_offset(0x7)
+
+
+    return log_points
 
 
 
