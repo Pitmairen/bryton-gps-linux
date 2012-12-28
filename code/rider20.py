@@ -348,9 +348,15 @@ def _read_logpoints(buf, time, count):
 
     for i in range(count):
 
+        speed = buf.uint8_from(0x00)
+        if speed != 0xff:
+            speed = speed / 8.0 * 60 * 60 / 1000
+        else:
+            speed = None
+
         lp = rider40.LogPoint(
             timestamp=time,
-            speed=buf.uint8_from(0x00) / 8.0 * 60 * 60 / 1000,
+            speed=speed,
         )
 
         log_points.append(lp)
