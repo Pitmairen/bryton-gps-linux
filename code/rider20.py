@@ -207,25 +207,32 @@ def _read_trackpoint_segment(buf):
 
     next_offset = buf.uint32_from(0x1c)
 
-
     format = buf.uint16_from(0x18)
-    if format not in [0x0160, 0x0161] and \
-            (count == 0 and format not in [0x0140, 0x0141]):
-        raise RuntimeError('Unknown trackpoint format. '
-                           'It can probably easily be fixed if test data '
-                           'is provided.')
 
     buf.set_offset(0x28)
 
     if count > 0:
-        s.extend(_read_trackpoints(buf, s.timestamp, lon_start, lat_start,
-                                   elevation_start, count))
+
+        if format in [0x0160, 0x0161]:
+            track_points = _read_trackpoints_format_1(buf, s.timestamp,
+                                                      lon_start, lat_start,
+                                                      elevation_start, count)
+        elif format == 0x0461:
+            track_points = _read_trackpoints_format_2(buf, s.timestamp,
+                                                      lon_start, lat_start,
+                                                      elevation_start, count)
+        else:
+            raise RuntimeError('Unknown trackpoint format. '
+                               'It can probably easily be fixed if test data '
+                               'is provided.')
+
+        s.extend(track_points)
 
     return s, next_offset
 
 
 
-def _read_trackpoints(buf, time, lon, lat, ele, count):
+def _read_trackpoints_format_1(buf, time, lon, lat, ele, count):
 
     track_points = []
     track_points.append(rider40.TrackPoint(
@@ -238,6 +245,49 @@ def _read_trackpoints(buf, time, lon, lat, ele, count):
     for i in range(count):
 
         time += buf.uint8_from(0x5)
+
+        cur_ele = buf.int8_from(0x4)
+        if cur_ele != -1 and cur_ele != 0:
+            ele = (cur_ele - 10) * 10.0
+
+        lon += buf.int16_from(0x00)
+        lat += buf.int16_from(0x02)
+
+        track_points.append(rider40.TrackPoint(
+            timestamp=time,
+            longitude=lon / 1000000.0,
+            latitude=lat / 1000000.0,
+            elevation=ele
+        ))
+
+
+        buf.set_offset(0x6)
+
+    _smooth_elevation(track_points)
+
+    return track_points
+
+
+
+def _read_trackpoints_format_2(buf, time, lon, lat, ele, count):
+
+    track_points = []
+    track_points.append(rider40.TrackPoint(
+        timestamp=time,
+        longitude=lon / 1000000.0,
+        latitude=lat / 1000000.0,
+        elevation=ele
+    ))
+
+    for i in range(count):
+
+        time_val = buf.uint8_from(0x5)
+        if time_val != 1:
+            raise RuntimeError('Unexpected time value in trackpoint format. '
+                               'It can probably easily be fixed if test data '
+                               'is provided.')
+
+        time += 4
 
         cur_ele = buf.int8_from(0x4)
         if cur_ele != -1 and cur_ele != 0:
