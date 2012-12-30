@@ -206,8 +206,20 @@ def _get_lap_trackpoints(track):
 
     lap = (summaries.pop(0), [[]])
     laps = [lap]
+    first = True
 
-    for seg in track.merged_segments():
+    for seg in track.merged_segments(remove_empty_track_segs=False):
+
+        if first:
+            # Sometimes the first segment is a small segment without
+            # trackpoints. We just remove this, Bryton's own software
+            # seems to be doing the same.
+            first = False
+            seg = list(seg)
+            if len(seg) < 5:
+                # If it contains no trackpoints we remove it.
+                if not [1 for tp, lp in seg if tp is not None]:
+                    continue
 
         for tp, lp in seg:
 
