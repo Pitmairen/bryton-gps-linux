@@ -639,7 +639,7 @@ def _merge_segments(track_seg, log_seg):
                    key=lambda x: x.timestamp)
 
     l = items[0:4]
-    count = i = 4
+    count = i = len(l)
     while count > 1:
 
         if l[0].timestamp == l[1].timestamp:
