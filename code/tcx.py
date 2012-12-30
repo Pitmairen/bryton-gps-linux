@@ -228,7 +228,7 @@ def _get_lap_trackpoints(track):
             if timestamp < lap[0].end or not summaries:
                 lap[1][-1].append((tp, lp))
             else:
-                lap = (summaries.pop(0), [[]])
+                lap = (summaries.pop(0), [[(tp, lp)]])
                 laps.append(lap)
 
         lap[1].append([])
