@@ -475,6 +475,9 @@ def _calculate_last_lap(track, laps, summary):
 
     if speed:
         last_lap.speed = AvgMax(sum(speed) / len(speed), max(speed))
+    else:
+        last_lap.speed = AvgMax(0, 0)
+
     if hr:
         last_lap.heartrate = AvgMax(sum(hr) / len(hr), max(hr))
     if cadence:
