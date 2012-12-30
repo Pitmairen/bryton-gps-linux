@@ -328,7 +328,9 @@ def _read_logpoint_segment(buf):
     if count > 0:
 
         if format in [0x8104, 0x0104]:
-            log_points = _read_logpoints(buf, s.timestamp, count)
+            log_points = _read_logpoints_format_1(buf, s.timestamp, count)
+        elif format == 0x8704:
+            log_points = _read_logpoints_format_2(buf, s.timestamp, count)
         else:
             raise RuntimeError('Unknown logpoint format. You are probably '
                                'using a sensor that has not been tested '
@@ -342,7 +344,7 @@ def _read_logpoint_segment(buf):
 
 
 
-def _read_logpoints(buf, time, count):
+def _read_logpoints_format_1(buf, time, count):
 
     log_points = []
 
@@ -364,6 +366,42 @@ def _read_logpoints(buf, time, count):
         time += 4
 
         buf.set_offset(0x1)
+
+
+    return log_points
+
+
+
+def _read_logpoints_format_2(buf, time, count):
+
+    log_points = []
+
+    for i in range(count):
+
+        speed = buf.uint8_from(0x00)
+        if speed != 0xff:
+            speed = speed / 8.0 * 60 * 60 / 1000
+        else:
+            speed = None
+
+        lp = rider40.LogPoint(
+            timestamp=time,
+            speed=speed,
+        )
+
+        cad = buf.uint8_from(0x01)
+        if cad != 0xff:
+            lp.cadence = cad
+
+        hr = buf.uint8_from(0x02)
+        if hr != 0xff:
+            lp.heartrate = hr
+
+        log_points.append(lp)
+
+        time += 4
+
+        buf.set_offset(0x03)
 
 
     return log_points
