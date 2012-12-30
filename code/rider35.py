@@ -406,7 +406,7 @@ def _calculate_last_lap(track, laps, summary):
 
     lap = _pop_lap()
 
-    for seg in track.merged_segments():
+    for seg in track.merged_segments(remove_empty_track_segs=False):
 
         for tp, lp in seg:
 
