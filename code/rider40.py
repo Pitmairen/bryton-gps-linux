@@ -629,6 +629,10 @@ def _merge_segments(track_seg, log_seg):
 
     def _point(a, b):
 
+        if type(a) == type(b):
+            raise RuntimeError("Can not merge logpoint/trackpoint of same type."
+                               " This should not happend, it's a bug in the code.")
+
         if isinstance(a, TrackPoint):
             return (a, b)
         elif isinstance(b, TrackPoint) or b is None:
@@ -643,7 +647,10 @@ def _merge_segments(track_seg, log_seg):
     while count > 1:
 
         if l[0].timestamp == l[1].timestamp:
-            yield _point(l.pop(0), l.pop(0))
+            if type(l[0]) == type(l[1]):
+                yield _point(l.pop(0), None)
+            else:
+                yield _point(l.pop(0), l.pop(0))
         elif l[1].timestamp - l[0].timestamp > 2:
             yield _point(l.pop(0), None)
         elif type(l[0]) == type(l[1]):
