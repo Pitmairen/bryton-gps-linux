@@ -237,7 +237,7 @@ def _read_trackpoint_segment(buf):
 
         s.extend(track_points)
 
-    elif format not in [0x0140]:
+    elif format not in [0x0140, 0x0440]:
         raise RuntimeError('Unknown trackpoint format. '
                            'It can probably easily be fixed if test data '
                            'is provided.')
