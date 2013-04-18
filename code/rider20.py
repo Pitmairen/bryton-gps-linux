@@ -36,6 +36,8 @@ class Rider20(rider40.Rider40):
 
     BLOCK_COUNT = 0x0ff
 
+    has_altimeter = False
+
 
 
 class Track(rider40.Track):
