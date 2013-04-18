@@ -227,7 +227,11 @@ def _read_trackpoint_segment(buf):
     if count > 0:
 
         if format == 0x0160:
-            track_points = _read_trackpoints(buf, s.timestamp, lon_start,
+            track_points = _read_trackpoints_format_1(buf, s.timestamp, lon_start,
+                                             lat_start, elevation_start,
+                                             count)
+        if format == 0x0460:
+            track_points = _read_trackpoints_format_2(buf, s.timestamp, lon_start,
                                              lat_start, elevation_start,
                                              count)
         else:
@@ -246,7 +250,7 @@ def _read_trackpoint_segment(buf):
 
 
 
-def _read_trackpoints(buf, time, lon, lat, ele, count):
+def _read_trackpoints_format_1(buf, time, lon, lat, ele, count):
 
     track_points = []
     track_points.append(rider40.TrackPoint(
@@ -264,6 +268,40 @@ def _read_trackpoints(buf, time, lon, lat, ele, count):
 
         ele += buf.int8_from(0x4) / 10.0
         time += buf.uint8_from(0x5)
+
+        track_points.append(rider40.TrackPoint(
+            timestamp=time,
+            longitude=lon / 1000000.0,
+            latitude=lat / 1000000.0,
+            elevation=ele
+        ))
+
+
+        buf.set_offset(0x6)
+
+
+    return track_points
+
+
+
+def _read_trackpoints_format_2(buf, time, lon, lat, ele, count):
+
+    track_points = []
+    track_points.append(rider40.TrackPoint(
+        timestamp=time,
+        longitude=lon / 1000000.0,
+        latitude=lat / 1000000.0,
+        elevation=ele
+    ))
+
+    for i in range(count):
+
+
+        lon += buf.int16_from(0x00)
+        lat += buf.int16_from(0x02)
+
+        ele += buf.int8_from(0x4) / 10.0
+        time += buf.uint8_from(0x5) * 4
 
         track_points.append(rider40.TrackPoint(
             timestamp=time,
