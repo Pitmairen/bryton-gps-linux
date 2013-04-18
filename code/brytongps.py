@@ -27,6 +27,8 @@ import os
 import getpass
 import time
 
+from functools import partial
+
 import rider40
 import common
 import gpx
@@ -151,8 +153,15 @@ def export_tracks(tracks, export_func, file_ext, args):
             f.write(out)
 
 
+def export_fake_garmin(tracks, args):
 
-def upload_strava(tracks, args):
+    export_func = partial(tcx.track_to_tcx, fake_garmin_device=True)
+
+    export_tracks(tracks, export_func, 'tcx', args)
+
+
+
+def upload_strava(tracks, args, fake_garmin_device=False):
 
     if args.strava_email is None:
         print 'Missing email for strava.com'
@@ -163,7 +172,7 @@ def upload_strava(tracks, args):
         password = getpass.getpass('Strava.com password:')
 
 
-    uploader = strava.StravaUploader()
+    uploader = strava.StravaUploader(fake_garmin_device=fake_garmin_device)
 
     try:
         print 'Authenticating to strava.com'
@@ -231,6 +240,12 @@ def options():
     p.add_argument('--strava-password', nargs='?',
                    help='strava.com password')
 
+    p.add_argument('--fake-garmin', action='store_true',
+                   help='This will add a created with Garmin Edge 800 element '
+                        'to tcx files which will make strava.com trust the '
+                        'elevation data. Useful if your device has an '
+                        'altimeter. Only used when exporting tcx files.')
+
 
     return p
 
@@ -271,9 +286,13 @@ def main():
             if args.gpxx:
                 export_tracks(tracks, gpx.track_to_garmin_gpxx, 'gpx', args)
             if args.tcx:
-                export_tracks(tracks, tcx.track_to_tcx, 'tcx', args)
+                if args.fake_garmin:
+                    export_fake_garmin(tracks, args)
+                else:
+                    export_tracks(tracks, tcx.track_to_tcx, 'tcx', args)
             if args.strava:
-                upload_strava(tracks, args)
+                upload_strava(tracks, args,
+                              fake_garmin_device=device.has_altimeter)
 
 
         else:
