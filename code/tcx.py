@@ -165,7 +165,44 @@ def create_laps(track, parent, ns=tcx_ns):
 
 
 
-def track_to_tcx(track, pretty=False):
+def create_fake_creator_element(parent, ns=tcx_ns):
+    """Add fake creator to make strava.com trust the elevation data"""
+
+    creator = xml.SubElement(parent, ns('Creator'))
+    creator.set(xsi_ns('type'), 'Device_t')
+
+    xml.SubElement(creator, ns('Name')).text = 'Garmin Edge 800'
+    xml.SubElement(creator, ns('UnitId')).text = '9999999'
+    xml.SubElement(creator, ns('ProductID')).text = '1169'
+
+    version = xml.SubElement(creator, ns('Version'))
+    xml.SubElement(version, ns('VersionMajor')).text = '0'
+    xml.SubElement(version, ns('VersionMinor')).text = '0'
+    xml.SubElement(version, ns('BuildMajor')).text = '0'
+    xml.SubElement(version, ns('BuildMinor')).text = '0'
+
+
+
+def create_author_element(parent, ns=tcx_ns):
+
+    author = xml.SubElement(parent, ns('Author'))
+    author.set(xsi_ns('type'), 'Application_t')
+
+    xml.SubElement(author, ns('Name')).text = 'Bryton GPS Linux'
+
+    build = xml.SubElement(author, ns('Build'))
+    version = xml.SubElement(build, ns('Version'))
+    xml.SubElement(version, ns('VersionMajor')).text = '0'
+    xml.SubElement(version, ns('VersionMinor')).text = '1'
+    xml.SubElement(version, ns('BuildMajor')).text = '0'
+    xml.SubElement(version, ns('BuildMinor')).text = '0'
+
+    xml.SubElement(author, ns('LangID')).text = 'en'
+    xml.SubElement(author, ns('PartNumber')).text = '000-D123-00'
+
+
+
+def track_to_tcx(track, pretty=False, fake_garmin_device=False):
 
     ns = tcx_ns
 
@@ -187,6 +224,12 @@ def track_to_tcx(track, pretty=False):
 
 
     create_laps(track, activity, ns)
+
+    if fake_garmin_device:
+        create_fake_creator_element(activity, ns)
+
+
+    create_author_element(root, ns)
 
     if pretty:
         indent_element_tree(root, ws=' ')

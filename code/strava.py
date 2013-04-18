@@ -51,8 +51,9 @@ def _req(*args, **kwargs):
 
 class StravaUploader(object):
 
-    def __init__(self):
+    def __init__(self, fake_garmin_device=False):
         self.token = None
+        self.fake_garmin_device = fake_garmin_device
 
 
     def authenticate(self, email, password):
@@ -71,7 +72,9 @@ class StravaUploader(object):
         data = json.dumps({
             'token' : self.token,
             'type' : 'tcx',
-            'data' : tcx.track_to_tcx(track),
+            'data' : tcx.track_to_tcx(track,
+                                      fake_garmin_device= \
+                                      self.fake_garmin_device),
             'activity_type' : 'ride',
         })
 
