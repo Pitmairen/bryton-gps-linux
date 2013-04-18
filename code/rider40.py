@@ -46,6 +46,7 @@ class Rider40(object):
     BLOCK_SIZE = 4096
     BLOCK_COUNT = 0x1ff
 
+    has_altimeter = True
 
     def __init__(self, device_access):
         self.dev = device_access
