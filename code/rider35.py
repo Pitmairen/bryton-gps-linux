@@ -230,7 +230,7 @@ def _read_trackpoint_segment(buf):
             track_points = _read_trackpoints_format_1(buf, s.timestamp, lon_start,
                                              lat_start, elevation_start,
                                              count)
-        if format == 0x0460:
+        elif format == 0x0460:
             track_points = _read_trackpoints_format_2(buf, s.timestamp, lon_start,
                                              lat_start, elevation_start,
                                              count)
