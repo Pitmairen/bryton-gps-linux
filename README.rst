@@ -35,3 +35,23 @@ It probably works with other devices.
 <https://github.com/pitmairen/bryton-gps-linux/raw/master/Rider40>`_.
 
 
+
+Usage:
+------
+
+You need Python 2.7 and the `py_sg module <https://pypi.python.org/pypi/py_sg/>`_.
+
+This can be installed with pip or easy_install:
+
+    pip install py_sg
+
+
+To access the device without root access you can use the following udev rule:
+
+    SUBSYSTEMS=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5720", GROUP="users"
+
+Place this into the file "/etc/udev/rule.d/99-brytongps.rules" you may have to reboot for it to take effect.
+
+Now you can run:
+
+    $ python brytongps.py -h
