@@ -6,12 +6,20 @@ This is an attempt to make Bryton GPS devices usable on Linux.
 
 Code for the **Rider40** is now available in the **code** directory.
 
+There is also branches for **Rider20** and **Rider35**:
+
+- `Rider35
+  <https://github.com/Pitmairen/bryton-gps-linux/tree/rider35>`_
+- `Rider20
+  <https://github.com/Pitmairen/bryton-gps-linux/tree/rider20>`_
+
 It currently has the following functionality:
 
 - Readonly not write support
 - List track history
 - List track summary
 - Generate GPX (plain and Garmin extension) and TCX files.
+- Upload to strava.com
 
 
 The code is released under the GPL v3 license.
