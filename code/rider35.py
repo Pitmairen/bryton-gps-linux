@@ -367,6 +367,11 @@ def _read_logpoints_format_1(buf, time, count):
         )
 
 
+        # This may be heart rate, but it needs to be confirmed
+        if buf.uint8_from(0x01) != 0xff:
+            raise RuntimeError('Unexpected value in logpoint')
+
+
         log_points.append(lp)
 
         time += 4
