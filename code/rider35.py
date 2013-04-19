@@ -333,7 +333,7 @@ def _read_logpoint_segment(buf):
 
     if count > 0:
 
-        if format == 0x3304:
+        if format in [0x3304, 0x3504]:
             log_points = _read_logpoints_format_1(buf, s.timestamp, count)
         elif format == 0x3704:
             log_points = _read_logpoints_format_2(buf, s.timestamp, count)
