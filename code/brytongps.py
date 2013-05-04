@@ -245,7 +245,14 @@ def options():
                         'to tcx files which will make strava.com trust the '
                         'elevation data. Useful if your device has an '
                         'altimeter. Only used when exporting tcx files.')
-
+    p.add_argument('--fix-elevation', nargs='?', type=int, metavar='N',
+                   help='Set the elevation of the first trackpoint to N. '
+                        'The other trackpoints will be adjusted relative to '
+                        'the first one. '
+                        'This is useful if you forget to calibrate the '
+                        'altimeter before the ride and you know the elevation '
+                        'where you started. Only useful if you device has an '
+                        'altimeter.')
 
     return p
 
@@ -281,6 +288,9 @@ def main():
                 print_summaries(tracks)
                 return 0
 
+            if args.fix_elevation:
+                fix_elevation(tracks, args.fix_elevation)
+
             if args.gpx:
                 export_tracks(tracks, gpx.track_to_plain_gpx, 'gpx', args)
             if args.gpxx:
@@ -301,6 +311,29 @@ def main():
 
 
     return 0
+
+
+
+def fix_elevation(tracks, new_elevation):
+    for t in tracks:
+        fix_track_elevation(t, new_elevation)
+
+
+def fix_track_elevation(track, new_elevation):
+
+    diff = None
+
+    for seg in track.trackpoints:
+
+        for tp in seg:
+
+            if diff is None:
+                diff = new_elevation - tp.elevation
+
+            tp.elevation += diff
+
+    return track
+
 
 
 
