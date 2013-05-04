@@ -126,9 +126,10 @@ class Track(object):
 
             seg = _read_logpoint_segment(buf)
 
-            if seg.segment_type != tseg.segment_type:
-                raise RuntimeError('Matching segments are expected to have'
-                                   ' the same type.')
+            #
+            #if seg.segment_type != tseg.segment_type:
+            #    raise RuntimeError('Matching segments are expected to have'
+            #                       ' the same type.')
 
             segments.append(seg)
 
