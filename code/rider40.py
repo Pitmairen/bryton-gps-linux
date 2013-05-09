@@ -46,6 +46,12 @@ class Rider40(object):
     BLOCK_SIZE = 4096
     BLOCK_COUNT = 0x1ff
 
+
+    TRACKPOINT_SPACE = 483328
+    LOGPOINTS_SPACE = 286696
+    TRACKLIST_SPACE = 33634
+    LAPS_SPACE = 114688
+
     has_altimeter = True
 
     def __init__(self, device_access):
@@ -80,6 +86,42 @@ class Rider40(object):
         abs_offset = offset - rel_offset
 
         return DataBuffer(self, d, rel_offset, abs_offset)
+
+
+
+    def read_storage_usage(self):
+
+        buf = self.read_from_offset(0)
+
+        for i in range(0x6000/256):
+
+            if buf.uint16_from(0) == 0xffff:
+                buf.set_offset(-256)
+                break
+
+            buf.set_offset(256)
+
+        trackpoints = buf.uint32_from(0x88)
+        logpoints = buf.uint32_from(0x94)
+        tracklist = buf.uint32_from(0x58)
+        laps = buf.uint32_from(0x64)
+
+
+        ret = {}
+
+        ret['trackpoints'] = {
+            'total' : self.TRACKPOINT_SPACE,
+            'left' : trackpoints}
+        ret['logpoints'] = {
+            'total' : self.LOGPOINTS_SPACE,
+            'left' : logpoints}
+        ret['tracklist'] = {
+            'total' : self.TRACKLIST_SPACE,
+            'left' : tracklist}
+        ret['laps'] = {
+            'total' : self.LAPS_SPACE,
+            'left' : laps}
+        return ret
 
 
 
@@ -199,6 +241,23 @@ class Track(object):
         return laps
 
 
+    @cached_property
+    def storage_usage(self):
+
+        tp = 0
+        for seg in self.trackpoints:
+            tp += 40
+            if seg:
+                tp += seg.point_size * len(seg)
+        lp = 0
+        for seg in self.logpoints:
+            lp += 16
+            if seg:
+                lp += seg.point_size * len(seg)
+
+        return dict(trackpoints=tp, logpoints=lp)
+
+
 
 
 class Summary(object):
@@ -223,6 +282,9 @@ class Summary(object):
 class _Segment(object):
 
 
+    point_size = None
+
+
     @property
     def segment_type(self):
         return self._segment_type
@@ -243,6 +305,7 @@ class TrackPointSegment(list, _Segment):
 
     timestamp = None
     _offset_logpoints = None
+    point_size = 6
 
 
 
@@ -460,10 +523,13 @@ def _read_logpoint_segment(buf):
 
         if format == 0x7104:
             log_points = _read_logpoints_format_1(buf, s.timestamp, count)
+            s.point_size = 6
         elif format == 0x7504:
             log_points = _read_logpoints_format_2(buf, s.timestamp, count)
+            s.point_size = 7
         elif format == 0x7704:
             log_points = _read_logpoints_format_3(buf, s.timestamp, count)
+            s.point_size = 8
         else:
             raise RuntimeError('Unknown logpoint format. You are probably '
                                'using a sensor that has not been tested '
