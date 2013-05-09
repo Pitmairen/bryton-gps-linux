@@ -84,23 +84,28 @@ def get_tracks(history, track_ids):
     return tracks
 
 
-def print_history(history):
+def print_history(history, print_storage=False):
 
     i = 0
     for t in history:
-        print format(i, '2d'), ':', t.name
+        if print_storage:
+            u = t.storage_usage
+            print format(i, '2d'), ':', t.name, ' - Trackpoints ', \
+                    format_bytes(u['trackpoints']), ' - ', \
+                    'Logpoints', format_bytes(u['logpoints'])
+        else:
+            print format(i, '2d'), ':', t.name
         i += 1
 
 
-
-def print_summaries(tracks):
+def print_summaries(tracks, print_storage=False):
 
     for t in tracks:
 
-        print_summary(t.summary)
+        print_summary(t.summary, t, print_storage)
 
 
-def print_summary(s):
+def print_summary(s, track=None, print_storage=False):
 
     ts = datetime.datetime.fromtimestamp
 
@@ -109,21 +114,52 @@ def print_summary(s):
     print '{0} - {1} ({2})'.format(ts(s.start), ts(s.end),
                                    datetime.timedelta(seconds=s.ride_time))
 
-    print ' Dist: {0:.2f}Km'.format(s.distance / 1000.0)
-    print '  Cal: {0}'.format(s.calories)
-    print '  Alt: {0}m / {1}m (gain/loss)'.format(s.altitude_gain,
+    print '   Dist: {0:.2f}Km'.format(s.distance / 1000.0)
+    print '    Cal: {0}'.format(s.calories)
+    print '    Alt: {0}m / {1}m (gain/loss)'.format(s.altitude_gain,
                                                   s.altitude_loss)
-    print 'Speed: {0}Kph / {1}Kph (avg/max)'.format(s.speed.avg, s.speed.max)
+    print '  Speed: {0}Kph / {1}Kph (avg/max)'.format(s.speed.avg, s.speed.max)
 
     if s.heartrate is not None and s.heartrate.max > 0:
-        print '   Hr: {0}bpm / {1}bpm (avg/max)'.format(s.heartrate.avg,
+        print '     Hr: {0}bpm / {1}bpm (avg/max)'.format(s.heartrate.avg,
                                                         s.heartrate.max)
     if s.cadence is not None and s.cadence.max > 0:
-        print '  Cad: {0}rpm / {1}rpm (avg/max)'.format(s.cadence.avg,
+        print '    Cad: {0}rpm / {1}rpm (avg/max)'.format(s.cadence.avg,
                                                         s.cadence.max)
     if s.watts is not None and s.watts.max > 0:
-        print 'Watts: {0}/{1} (avg/max)'.format(s.watts.avg,
+        print '  Watts: {0}/{1} (avg/max)'.format(s.watts.avg,
                                                 s.watts.max)
+
+    if print_storage:
+        u = track.storage_usage
+        print 'Storage: Trackpoints', \
+                    format_bytes(u['trackpoints']), ' - ', \
+                    'Logpoints', format_bytes(u['logpoints'])
+
+
+def print_storage_usage(device):
+
+    print '{:>12} | {:>10} | {:>16} | {:>10}'.format('Type', 'Total', 'Used', 'Left')
+    print '{}|{}|{}|{}'.format('-'*13, '-'*12, '-'*18, '-'*17)
+
+    u = device.read_storage_usage()
+
+    _print_storage_row(u, 'trackpoints', 'Trackpoints')
+    _print_storage_row(u, 'logpoints', 'Logpoints')
+    _print_storage_row(u, 'tracklist', 'Tracks')
+    _print_storage_row(u, 'laps', 'Laps')
+
+
+
+def _print_storage_row(u, key, title):
+    print '{:>12} | {:>10} | {:>10} ({:>2}%) | {:>10} ({:>2}%)'.format(
+    title,
+    format_bytes(u[key]['total']),
+    format_bytes(u[key]['total'] - u[key]['left']),
+    100 * (u[key]['total'] - u[key]['left']) / u[key]['total'],
+    format_bytes(u[key]['left']),
+    100 - 100 * (u[key]['total'] - u[key]['left']) / u[key]['total'])
+
 
 
 
@@ -254,6 +290,10 @@ def options():
                         'where you started. Only useful if you device has an '
                         'altimeter.')
 
+    p.add_argument('--storage', action='store_true',
+                   help='This will show the storage usage on the deviced. '
+                        'When used together with --list-history or --summary '
+                        'the storage space used by each track will be shown.')
     return p
 
 
@@ -278,14 +318,14 @@ def main():
 
 
         if args.list_history:
-            print_history(history)
+            print_history(history, args.storage)
 
         elif args.tracks:
 
             tracks = get_tracks(history, args.tracks)
 
             if args.summary:
-                print_summaries(tracks)
+                print_summaries(tracks, args.storage)
                 return 0
 
             if args.fix_elevation:
@@ -304,7 +344,8 @@ def main():
                 upload_strava(tracks, args,
                               fake_garmin_device=device.has_altimeter)
 
-
+        elif args.storage:
+            print_storage_usage(device)
         else:
             opts.print_help()
 
@@ -335,6 +376,12 @@ def fix_track_elevation(track, new_elevation):
     return track
 
 
+def format_bytes(num):
+    for x in ['B','KB','MB','GB']:
+        if num < 1024.0 and num > -1024.0:
+            return "%3.1f%s" % (num, x)
+        num /= 1024.0
+    return "%3.1f%s" % (num, 'TB')
 
 
 if __name__ == '__main__':
