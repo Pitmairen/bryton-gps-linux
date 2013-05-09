@@ -36,6 +36,10 @@ class Rider35(rider40.Rider40):
 
     BLOCK_COUNT = 0x0ff
 
+    TRACKPOINT_SPACE = 516060
+    LOGPOINTS_SPACE = 327656
+    TRACKLIST_SPACE = 36860
+    LAPS_SPACE = 73728
 
 
 class Track(rider40.Track):
@@ -335,8 +339,10 @@ def _read_logpoint_segment(buf):
 
         if format in [0x3304, 0x3504]:
             log_points = _read_logpoints_format_1(buf, s.timestamp, count)
+            s.point_size = 6
         elif format == 0x3704:
             log_points = _read_logpoints_format_2(buf, s.timestamp, count)
+            s.point_size = 7
         else:
             raise RuntimeError('Unknown logpoint format. You are probably '
                                'using a sensor that has not been tested '
