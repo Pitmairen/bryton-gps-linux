@@ -49,7 +49,7 @@ class Rider40(object):
 
     TRACKPOINT_SPACE = 483304
     LOGPOINTS_SPACE = 286696
-    TRACKLIST_SPACE = 33634
+    TRACKLIST_SPACE = 33496
     LAPS_SPACE = 114688
 
     has_altimeter = True
