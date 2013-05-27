@@ -306,7 +306,8 @@ def options():
                    help='This will add a created with Garmin Edge 800 element '
                         'to tcx files which will make strava.com trust the '
                         'elevation data. Useful if your device has an '
-                        'altimeter. Only used when exporting tcx files.')
+                        'altimeter. Used when exporting to tcx and when '
+                        'uploading to strava.com')
     p.add_argument('--fix-elevation', nargs='?', type=int, metavar='N',
                    help='Set the elevation of the first trackpoint to N. '
                         'The other trackpoints will be adjusted relative to '
@@ -374,7 +375,7 @@ def main():
                     export_tracks(tracks, tcx.track_to_tcx, 'tcx', args)
             if args.strava:
                 upload_strava(tracks, args,
-                              fake_garmin_device=device.has_altimeter)
+                              fake_garmin_device=args.fake_garmin)
 
         elif args.storage:
             print_storage_usage(device)

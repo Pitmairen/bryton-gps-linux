@@ -421,7 +421,7 @@ def _read_trackpoint_segment(buf):
 
     buf.set_offset(0x28)
 
-    if count > 0:
+    if count > 0 or lon_start != -1:
 
         if format == 0x0140:
             track_points = _read_trackpoints_format_1(buf, s.timestamp,
