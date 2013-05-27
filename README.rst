@@ -6,12 +6,15 @@ This is an attempt to make Bryton GPS devices usable on Linux.
 
 Code for the **Rider40** is now available in the **code** directory.
 
-There is also branches for **Rider20** and **Rider35**:
+There is also branches for **Rider20**, **Rider20+** and **Rider35**:
 
 - `Rider35
   <https://github.com/Pitmairen/bryton-gps-linux/tree/rider35>`_
-- `Rider20
+- `Rider20 (works with cardio35)
   <https://github.com/Pitmairen/bryton-gps-linux/tree/rider20>`_
+- `Rider20+
+  <https://github.com/Pitmairen/bryton-gps-linux/tree/rider20plus>`_
+
 
 It currently has the following functionality:
 

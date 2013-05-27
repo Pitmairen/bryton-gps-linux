@@ -245,7 +245,7 @@ def track_to_tcx(track, pretty=False, fake_garmin_device=False):
 
 def _get_lap_trackpoints(track):
 
-    summaries = track.lap_summaries
+    summaries = track.lap_summaries[:]
 
     lap = (summaries.pop(0), [[]])
     laps = [lap]
