@@ -35,10 +35,21 @@ except ImportError, e:
 def find_device():
 
     devices = glob.glob('/dev/disk/by-id/usb-BRYTON_MASS_STORAGE_*')
+
+    if not devices:
+        fat_devices = glob.glob('/dev/disk/by-id/usb-BRYTON_Storage_Disk_*')
+        if fat_devices:
+            raise RuntimeError('It seems like you are using a newer device '
+                               ' with a FAT12 filesystem, dump.py is not useful '
+                               'with these devices.'
+                               ' Try the following command in the terminal instead: '
+                               ' "dd if=/dev/disk/by-label/BRYTON of=device.dump"')
+
     if len(devices) > 1:
         raise RuntimeError('Multiple Devices Found')
     elif not devices:
-        raise RuntimeError('Device Not Found')
+        raise RuntimeError('Device Not Found.')
+
 
     device = devices[0]
 
