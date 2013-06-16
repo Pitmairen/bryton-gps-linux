@@ -235,9 +235,15 @@ def _read_trackpoint_segment(buf):
     s.point_size = 10
 
     s.timestamp = buf.uint32_from(0x00)
-    seg_type = buf.uint8_from(0x1A) - 0x30
+    seg_type = buf.uint8_from(0x1A)
 
-    s.segment_type = seg_type
+    try:
+        # seems to work with rider20plus
+        s.segment_type = seg_type - 0x30
+    except RuntimeError:
+        # seems to work with rider21
+        s.segment_type = seg_type - 0x40
+
 
     lon_start = buf.int32_from(0x04)
     lat_start = buf.int32_from(0x08)
