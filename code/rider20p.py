@@ -418,6 +418,13 @@ def _read_logpoint_segment(buf):
         if format == 0x4304:
             log_points = _read_logpoints_format_1(buf, s.timestamp, count)
             s.point_size = 3
+        elif format == 0x7704:
+            # It seems to be the same format as the rider40, but the
+            # airpressure is instead the altitude
+            # ((buf.uint16_from(0x05) - 4000) / 4.0)
+            log_points = rider40._read_logpoints_format_3(buf, s.timestamp,
+                                                          count)
+            s.point_size = 8
         else:
             raise RuntimeError('Unknown logpoint format. '
                                'It can probably easily be fixed if test data '
