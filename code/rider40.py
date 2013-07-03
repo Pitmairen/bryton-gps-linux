@@ -101,26 +101,33 @@ class Rider40(object):
 
             buf.set_offset(256)
 
-        trackpoints = buf.uint32_from(0x88)
-        logpoints = buf.uint32_from(0x94)
-        tracklist = buf.uint32_from(0x58)
-        laps = buf.uint32_from(0x64)
+        tp_left = buf.uint32_from(0x88)
+        tp_used = buf.uint32_from(0x90) - buf.uint32_from(0x8C)
+
+        lp_left = buf.uint32_from(0x94)
+        lp_used = buf.uint32_from(0x9C) - buf.uint32_from(0x98)
+
+        tracklist_left = buf.uint32_from(0x58)
+        tracklist_used = buf.uint32_from(0x60) - buf.uint32_from(0x5C)
+
+        laps_left = buf.uint32_from(0x64)
+        laps_used = buf.uint32_from(0x6C) - buf.uint32_from(0x68)
 
 
         ret = {}
 
         ret['trackpoints'] = {
-            'total' : self.TRACKPOINT_SPACE,
-            'left' : trackpoints}
+            'total' : tp_used + tp_left,
+            'left' : tp_left}
         ret['logpoints'] = {
-            'total' : self.LOGPOINTS_SPACE,
-            'left' : logpoints}
+            'total' : lp_used + lp_left,
+            'left' : lp_left}
         ret['tracklist'] = {
-            'total' : self.TRACKLIST_SPACE,
-            'left' : tracklist}
+            'total' : tracklist_used + tracklist_left,
+            'left' : tracklist_left}
         ret['laps'] = {
-            'total' : self.LAPS_SPACE,
-            'left' : laps}
+            'total' : laps_used + laps_left,
+            'left' : laps_left}
         return ret
 
 
