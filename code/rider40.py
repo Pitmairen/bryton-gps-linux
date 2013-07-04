@@ -30,13 +30,6 @@ SEGMENT_BEFORE_MANUALPAUSE = 2
 SEGMENT_LAST = 3
 
 
-OFFSET_TRACKPOINTS = 0xAB000 + 24
-OFFSET_LOGPOINTS = 0x121000 + 24
-OFFSET_SUMMARIES = 0x83000
-OFFSET_TRACKLIST = 0x7ac86
-OFFSET_TRACK_SETTINGS = 0x167000
-
-
 
 class Rider40(object):
 
@@ -45,12 +38,6 @@ class Rider40(object):
 
     BLOCK_SIZE = 4096
     BLOCK_COUNT = 0x1ff
-
-
-    TRACKPOINT_SPACE = 483304
-    LOGPOINTS_SPACE = 286696
-    TRACKLIST_SPACE = 33496
-    LAPS_SPACE = 114688
 
     has_altimeter = True
 
@@ -91,6 +78,39 @@ class Rider40(object):
 
     def read_storage_usage(self):
 
+
+        l = self.last_log_entry
+
+        tp_used = l.offset_end_trackpoints - l.offset_start_trackpoints
+
+        lp_used = l.offset_end_logpoints - l.offset_start_logpoints
+
+        tracklist_used = l.offset_end_history - l.offset_start_history
+
+        laps_used = l.offset_end_laps - l.offset_start_laps
+
+
+        ret = {}
+
+        ret['trackpoints'] = {
+            'total' : tp_used + l.space_left_trackpoints,
+            'left' : l.space_left_trackpoints}
+        ret['logpoints'] = {
+            'total' : lp_used + l.space_left_logpoints,
+            'left' : l.space_left_logpoints}
+        ret['tracklist'] = {
+            'total' : tracklist_used + l.space_left_history,
+            'left' : l.space_left_history}
+        ret['laps'] = {
+            'total' : laps_used + l.space_left_laps,
+            'left' : l.space_left_laps}
+
+        return ret
+
+
+    @cached_property
+    def last_log_entry(self):
+
         buf = self.read_from_offset(0)
 
         for i in range(0x6000/256):
@@ -101,27 +121,30 @@ class Rider40(object):
 
             buf.set_offset(256)
 
-        trackpoints = buf.uint32_from(0x88)
-        logpoints = buf.uint32_from(0x94)
-        tracklist = buf.uint32_from(0x58)
-        laps = buf.uint32_from(0x64)
+        return _read_log_entry(buf)
 
 
-        ret = {}
 
-        ret['trackpoints'] = {
-            'total' : self.TRACKPOINT_SPACE,
-            'left' : trackpoints}
-        ret['logpoints'] = {
-            'total' : self.LOGPOINTS_SPACE,
-            'left' : logpoints}
-        ret['tracklist'] = {
-            'total' : self.TRACKLIST_SPACE,
-            'left' : tracklist}
-        ret['laps'] = {
-            'total' : self.LAPS_SPACE,
-            'left' : laps}
-        return ret
+
+
+class LogEntry(object):
+
+    space_left_history = None
+    offset_start_history = None
+    offset_end_history = None
+
+    space_left_laps = None
+    offset_start_laps = None
+    offset_end_laps = None
+
+    space_left_trackpoints = None
+    offset_start_trackpoints = None
+    offset_end_trackpoints = None
+
+    space_left_logpoints = None
+    offset_start_logpoints = None
+    offset_end_logpoints = None
+
 
 
 
@@ -144,10 +167,12 @@ class Track(object):
     @cached_property
     def trackpoints(self):
 
-        buf = self.device.read_from_offset(OFFSET_TRACKPOINTS +
+        buf = self.device.read_from_offset(
+            self.device.last_log_entry.offset_start_trackpoints + \
                                            self._offset_trackpoints)
 
-        return _read_trackpoint_segments(buf)
+        return _read_trackpoint_segments(buf,
+                    self.device.last_log_entry.offset_start_trackpoints)
 
 
     @cached_property
@@ -156,7 +181,8 @@ class Track(object):
         segments = []
         for tseg in self.trackpoints:
 
-            offset = OFFSET_LOGPOINTS + tseg._offset_logpoints
+            offset = self.device.last_log_entry.offset_start_logpoints + \
+                    tseg._offset_logpoints
 
 
             if buf is None:
@@ -213,18 +239,23 @@ class Track(object):
 
         if self._offset_laps is not None:
 
-            buf = self.device.read_from_offset(OFFSET_SUMMARIES +
+            buf = self.device.read_from_offset(
+                self.device.last_log_entry.offset_start_laps +
                                                self._offset_laps)
             laps = self._read_laps(buf)
 
-        summary_offset = OFFSET_SUMMARIES + self._offset_summary
+
+        summary_offset = self.device.last_log_entry.offset_start_laps + \
+                        self._offset_summary
+
 
         if buf is None or buf.rel_offset + buf.abs_offset != summary_offset:
 
             if buf is not None:
                 warnings.warn('Unexpected summary offset', RuntimeWarning)
 
-            buf = self.device.read_from_offset(OFFSET_SUMMARIES +
+            buf = self.device.read_from_offset(
+                self.device.last_log_entry.offset_start_laps +
                                                self._offset_summary)
 
         return _read_summary(buf), laps
@@ -319,15 +350,14 @@ class LogPointSegment(list, _Segment):
 
 def read_history(device):
 
-    buf = device.read_from_offset(OFFSET_TRACKLIST)
 
-    count = buf.uint16_from(0x08)
+    buf = device.read_from_offset(device.last_log_entry.offset_start_history)
 
-    buf.set_offset(24)
+    end = device.last_log_entry.offset_end_history
 
     history = []
 
-    for i in range(count):
+    while buf.abs_position < end:
 
         timestamp = buf.uint32_from(0x00)
         name_len = buf.uint16_from(0x26)
@@ -355,9 +385,31 @@ def read_history(device):
     return history
 
 
+def _read_log_entry(buf):
+
+    ui32 = buf.uint32_from
+    l = LogEntry()
+
+    l.space_left_history = ui32(0x58)
+    l.offset_start_history = ui32(0x5C)
+    l.offset_end_history = ui32(0x60)
+
+    l.space_left_laps = ui32(0x64)
+    l.offset_start_laps = ui32(0x68)
+    l.offset_end_laps = ui32(0x6C)
+
+    l.space_left_trackpoints = ui32(0x88)
+    l.offset_start_trackpoints = ui32(0x8C)
+    l.offset_end_trackpoints = ui32(0x90)
+
+    l.space_left_logpoints = ui32(0x94)
+    l.offset_start_logpoints = ui32(0x98)
+    l.offset_end_logpoints = ui32(0x9C)
+
+    return l
 
 
-def _read_trackpoint_segments(buf):
+def _read_trackpoint_segments(buf, trackpoints_offset):
 
     segments = []
 
@@ -373,7 +425,7 @@ def _read_trackpoint_segments(buf):
             break
 
 
-        next_offset += OFFSET_TRACKPOINTS
+        next_offset += trackpoints_offset
 
         # Sometimes is seems like an extra trackpoint is added
         # to a segment but is not included in the count in the segment.
@@ -387,7 +439,6 @@ def _read_trackpoint_segments(buf):
             if diff < 0:
                 warnings.warn('Unexpected negative diff between segment '
                               'offsets.', RuntimeWarning)
-
             buf.set_offset(diff)
 
 
@@ -651,13 +702,13 @@ def _read_summary(buf):
     )
 
     s.heartrate = AvgMax(
-        buf.uint8_from(0x0e),
-        buf.uint8_from(0x0f),
+        buf.uint8_from(0x0e) if buf.uint8_from(0x0e) != 0xff else 0,
+        buf.uint8_from(0x0f) if buf.uint8_from(0x0f) != 0xff else 0,
     )
 
     s.cadence = AvgMax(
-        buf.uint8_from(0x10),
-        buf.uint8_from(0x11),
+        buf.uint8_from(0x10) if buf.uint8_from(0x10) != 0xff else 0,
+        buf.uint8_from(0x11) if buf.uint8_from(0x11) != 0xff else 0,
     )
 
     # s.watts = AvgMax(

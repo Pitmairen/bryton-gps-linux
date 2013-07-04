@@ -17,84 +17,127 @@
 # along with Bryton-GPS-Linux.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import urllib
-import urllib2
 import json
+import urllib2
 
+import cStringIO as StringIO
+
+try:
+    import mechanize
+    has_mechanize = True
+except ImportError:
+    has_mechanize = False
 
 import tcx
 
 
-_URL_AUTH = 'https://www.strava.com/api/v2/authentication/login'
-_URL_UPLOAD = 'http://www.strava.com/api/v2/upload'
-_URL_UPLOAD_STATUS = 'http://www.strava.com/api/v2/upload/status/{id}?' \
-        'token={token}'
+_URL_LOGIN = 'https://www.strava.com/login'
+_URL_UPLOAD = 'http://app.strava.com/upload/select'
+_URL_UPLOAD_STATUS = 'http://app.strava.com/upload/progress.json?' \
+        'new_uploader=true&ids[]={id}'
 
 StravaError = urllib2.URLError
 
 
 
-def urlencode(**kwargs):
-    return urllib.urlencode(kwargs)
 
-
-def _req(*args, **kwargs):
-
-    req = urllib2.urlopen(*args, **kwargs)
+def _open_url(browser, url):
 
     try:
-        return json.loads(req.read())
-    except ValueError, e:
-        raise StravaError(e.message)
+        browser.open(url)
+    except mechanize.HTTPError as e:
+        raise StravaError(str(e))
 
+def _get_response(browser):
+    try:
+        return json.loads(browser.response().get_data())
+    except ValueError, e:
+        raise StravaError('Failed to parse JSON response')
 
 
 class StravaUploader(object):
 
     def __init__(self, fake_garmin_device=False):
+
+        if not has_mechanize:
+            raise RuntimeError('To upload to strava you need the ' \
+                               '"mechanize" library (pip install mechanize)')
+
         self.token = None
         self.fake_garmin_device = fake_garmin_device
+
+        self.browser = mechanize.Browser()
 
 
     def authenticate(self, email, password):
 
-        resp = _req(_URL_AUTH, urlencode(email=email,
-                                         password=password))
+        _open_url(self.browser, _URL_LOGIN)
 
-        if 'error' in resp:
-            raise StravaError(resp['error'])
+        try:
+            self.browser.select_form(
+                predicate=lambda f: 'id' in f.attrs and \
+                f.attrs['id'] == 'login_form')
+        except mechanize.FormNotFoundError as e:
+            raise StravaError('Login form not found')
 
-        self.token = resp['token']
+
+        self.browser['email'] = email
+        self.browser['password'] = password
+
+        try:
+            self.browser.submit()
+        except mechanize.HTTPError as e:
+            raise StravaError(str(e))
+
+        if self.browser.geturl() == _URL_LOGIN:
+            raise StravaError('Failed to authenticate')
 
 
     def upload(self, track):
 
-        data = json.dumps({
-            'token' : self.token,
-            'type' : 'tcx',
-            'data' : tcx.track_to_tcx(track,
-                                      fake_garmin_device= \
-                                      self.fake_garmin_device),
-            'activity_type' : 'ride',
-        })
+        _open_url(self.browser, _URL_UPLOAD)
 
-        req = urllib2.Request(_URL_UPLOAD, data,
-                               {'Content-Type' : 'application/json'})
+        try:
+            self.browser.select_form(
+                predicate=lambda f: 'action' in f.attrs and \
+                f.attrs['action'] == '/upload/files')
+        except mechanize.FormNotFoundError as e:
+            raise StravaError('Upload form not found')
 
-        resp = _req(req)
 
-        if 'error' in resp:
+        data = tcx.track_to_tcx(track, fake_garmin_device= \
+                                      self.fake_garmin_device)
+
+        self.browser.form.add_file(StringIO.StringIO(data),
+                                   'text/plain',
+                                   track.name + '.tcx')
+
+        try:
+            self.browser.submit()
+        except mechanize.HTTPError as e:
+            raise StravaError(str(e))
+
+        resp = _get_response(self.browser)
+
+        if len(resp) != 1:
+            raise StravaError('Unexpected response')
+
+        resp = resp[0]
+
+        if 'error' in resp and resp['error'] is not None:
             raise StravaError(resp['error'])
 
-        return UploadStatus(self.token, resp['upload_id'])
+        return UploadStatus(self.browser, resp['id'])
+
+
 
 
 
 
 class UploadStatus(object):
 
-    def __init__(self, token, upload_id):
-        self.token = token
+    def __init__(self, browser, upload_id):
+        self.browser = browser
         self.upload_id = upload_id
 
         self.finished = False
@@ -102,16 +145,23 @@ class UploadStatus(object):
 
     def check_progress(self):
 
-        resp = _req(_URL_UPLOAD_STATUS.format(id=self.upload_id,
-                                              token=self.token))
+        _open_url(self.browser, _URL_UPLOAD_STATUS.format(id=self.upload_id))
 
-        if 'upload_error' in resp:
-            raise StravaError(resp['upload_error'])
 
-        self.finished = int(resp['upload_progress']) == 100
-        self.status_msg = resp['upload_status']
+        resp = _get_response(self.browser)
 
-        return resp['upload_progress']
+        if len(resp) != 1:
+            raise StravaError('Unexpected response')
+
+        resp = resp[0]
+
+        if 'error' in resp:
+            raise StravaError(resp['error'])
+
+        self.finished = int(resp['progress']) == 100
+        self.status_msg = resp['workflow']
+
+        return resp['progress']
 
 
 
