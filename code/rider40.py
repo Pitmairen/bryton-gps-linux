@@ -131,6 +131,45 @@ class Rider40(object):
         return ret
 
 
+    @cached_property
+    def last_log_entry(self):
+
+        buf = self.read_from_offset(0)
+
+        for i in range(0x6000/256):
+
+            if buf.uint16_from(0) == 0xffff:
+                buf.set_offset(-256)
+                break
+
+            buf.set_offset(256)
+
+        return _read_log_entry(buf)
+
+
+
+
+
+class LogEntry(object):
+
+    space_left_track = None
+    offset_first_track = None
+    offset_last_track = None
+
+    space_left_laps = None
+    offset_first_lap = None
+    offset_last_lap = None
+
+    space_left_trackpoints = None
+    offset_first_trackpoints = None
+    offset_last_trackpoints = None
+
+    space_left_logpoints = None
+    offset_first_logpoints = None
+    offset_last_logpoints = None
+
+
+
 
 class Track(object):
 
@@ -362,6 +401,28 @@ def read_history(device):
     return history
 
 
+def _read_log_entry(buf):
+
+    ui32 = buf.uint32_from
+    l = LogEntry()
+
+    l.space_left_track = ui32(0x58)
+    l.offset_first_track = ui32(0x5C)
+    l.offset_last_track = ui32(0x60)
+
+    l.space_left_laps = ui32(0x64)
+    l.offset_first_lap = ui32(0x68)
+    l.offset_last_lap = ui32(0x6C)
+
+    l.space_left_trackpoints = ui32(0x88)
+    l.offset_first_trackpoints = ui32(0x8C)
+    l.offset_last_trackpoints = ui32(0x90)
+
+    l.space_left_logpoints = ui32(0x94)
+    l.offset_first_logpoints = ui32(0x98)
+    l.offset_last_logpoints = ui32(0x9C)
+
+    return l
 
 
 def _read_trackpoint_segments(buf):
