@@ -66,7 +66,7 @@ def get_device(dev):
 
     dev_id = data[16:16 + 4]
 
-    if dev_id != '1504':
+    if dev_id not in ['1504', '1510']:
         warnings.warn('Unknown device model.', RuntimeWarning)
 
     return rider40, rider40.Rider40(dev)

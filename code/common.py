@@ -80,6 +80,10 @@ class DataBuffer(object):
         self.abs_offset = abs_offset
         self.data_len = data_len or self.device.BLOCK_SIZE
 
+    @property
+    def abs_position(self):
+        return self.abs_offset + self.rel_offset
+
     def buffer_from(self, offset):
 
         return DataBuffer(self.device, self.data, self.rel_offset + offset,
