@@ -702,13 +702,13 @@ def _read_summary(buf):
     )
 
     s.heartrate = AvgMax(
-        buf.uint8_from(0x0e),
-        buf.uint8_from(0x0f),
+        buf.uint8_from(0x0e) if buf.uint8_from(0x0e) != 0xff else 0,
+        buf.uint8_from(0x0f) if buf.uint8_from(0x0f) != 0xff else 0,
     )
 
     s.cadence = AvgMax(
-        buf.uint8_from(0x10),
-        buf.uint8_from(0x11),
+        buf.uint8_from(0x10) if buf.uint8_from(0x10) != 0xff else 0,
+        buf.uint8_from(0x11) if buf.uint8_from(0x11) != 0xff else 0,
     )
 
     # s.watts = AvgMax(
