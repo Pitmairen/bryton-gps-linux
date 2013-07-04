@@ -39,12 +39,6 @@ class Rider40(object):
     BLOCK_SIZE = 4096
     BLOCK_COUNT = 0x1ff
 
-
-    TRACKPOINT_SPACE = 483304
-    LOGPOINTS_SPACE = 286696
-    TRACKLIST_SPACE = 33496
-    LAPS_SPACE = 114688
-
     has_altimeter = True
 
     def __init__(self, device_access):
