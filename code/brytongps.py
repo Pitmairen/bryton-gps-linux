@@ -61,7 +61,7 @@ def get_device(dev):
 
     dev_id = data[16:16 + 4]
 
-    if dev_id == '1504':
+    if dev_id in ['1504', '1510']:
         return rider40, rider40.Rider40(dev)
     elif dev_id == '1000':
         return rider35, rider35.Rider35(dev)
