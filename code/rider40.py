@@ -81,13 +81,13 @@ class Rider40(object):
 
         l = self.last_log_entry
 
-        tp_used = l.offset_last_trackpoints - l.offset_first_trackpoints
+        tp_used = l.offset_end_trackpoints - l.offset_start_trackpoints
 
-        lp_used = l.offset_last_logpoints - l.offset_first_logpoints
+        lp_used = l.offset_end_logpoints - l.offset_start_logpoints
 
-        tracklist_used = l.offset_last_track - l.offset_first_track
+        tracklist_used = l.offset_end_history - l.offset_start_history
 
-        laps_used = l.offset_last_lap - l.offset_first_lap
+        laps_used = l.offset_end_laps - l.offset_start_laps
 
 
         ret = {}
@@ -99,8 +99,8 @@ class Rider40(object):
             'total' : lp_used + l.space_left_logpoints,
             'left' : l.space_left_logpoints}
         ret['tracklist'] = {
-            'total' : tracklist_used + l.space_left_track,
-            'left' : l.space_left_track}
+            'total' : tracklist_used + l.space_left_history,
+            'left' : l.space_left_history}
         ret['laps'] = {
             'total' : laps_used + l.space_left_laps,
             'left' : l.space_left_laps}
@@ -129,21 +129,21 @@ class Rider40(object):
 
 class LogEntry(object):
 
-    space_left_track = None
-    offset_first_track = None
-    offset_last_track = None
+    space_left_history = None
+    offset_start_history = None
+    offset_end_history = None
 
     space_left_laps = None
-    offset_first_lap = None
-    offset_last_lap = None
+    offset_start_laps = None
+    offset_end_laps = None
 
     space_left_trackpoints = None
-    offset_first_trackpoints = None
-    offset_last_trackpoints = None
+    offset_start_trackpoints = None
+    offset_end_trackpoints = None
 
     space_left_logpoints = None
-    offset_first_logpoints = None
-    offset_last_logpoints = None
+    offset_start_logpoints = None
+    offset_end_logpoints = None
 
 
 
@@ -168,11 +168,11 @@ class Track(object):
     def trackpoints(self):
 
         buf = self.device.read_from_offset(
-            self.device.last_log_entry.offset_first_trackpoints + \
+            self.device.last_log_entry.offset_start_trackpoints + \
                                            self._offset_trackpoints)
 
         return _read_trackpoint_segments(buf,
-                    self.device.last_log_entry.offset_first_trackpoints)
+                    self.device.last_log_entry.offset_start_trackpoints)
 
 
     @cached_property
@@ -181,7 +181,7 @@ class Track(object):
         segments = []
         for tseg in self.trackpoints:
 
-            offset = self.device.last_log_entry.offset_first_logpoints + \
+            offset = self.device.last_log_entry.offset_start_logpoints + \
                     tseg._offset_logpoints
 
 
@@ -240,12 +240,12 @@ class Track(object):
         if self._offset_laps is not None:
 
             buf = self.device.read_from_offset(
-                self.device.last_log_entry.offset_first_lap +
+                self.device.last_log_entry.offset_start_laps +
                                                self._offset_laps)
             laps = self._read_laps(buf)
 
 
-        summary_offset = self.device.last_log_entry.offset_first_lap + \
+        summary_offset = self.device.last_log_entry.offset_start_laps + \
                         self._offset_summary
 
 
@@ -255,7 +255,7 @@ class Track(object):
                 warnings.warn('Unexpected summary offset', RuntimeWarning)
 
             buf = self.device.read_from_offset(
-                self.device.last_log_entry.offset_first_lap +
+                self.device.last_log_entry.offset_start_laps +
                                                self._offset_summary)
 
         return _read_summary(buf), laps
@@ -351,9 +351,9 @@ class LogPointSegment(list, _Segment):
 def read_history(device):
 
 
-    buf = device.read_from_offset(device.last_log_entry.offset_first_track)
+    buf = device.read_from_offset(device.last_log_entry.offset_start_history)
 
-    end = device.last_log_entry.offset_last_track
+    end = device.last_log_entry.offset_end_history
 
     history = []
 
@@ -390,21 +390,21 @@ def _read_log_entry(buf):
     ui32 = buf.uint32_from
     l = LogEntry()
 
-    l.space_left_track = ui32(0x58)
-    l.offset_first_track = ui32(0x5C)
-    l.offset_last_track = ui32(0x60)
+    l.space_left_history = ui32(0x58)
+    l.offset_start_history = ui32(0x5C)
+    l.offset_end_history = ui32(0x60)
 
     l.space_left_laps = ui32(0x64)
-    l.offset_first_lap = ui32(0x68)
-    l.offset_last_lap = ui32(0x6C)
+    l.offset_start_laps = ui32(0x68)
+    l.offset_end_laps = ui32(0x6C)
 
     l.space_left_trackpoints = ui32(0x88)
-    l.offset_first_trackpoints = ui32(0x8C)
-    l.offset_last_trackpoints = ui32(0x90)
+    l.offset_start_trackpoints = ui32(0x8C)
+    l.offset_end_trackpoints = ui32(0x90)
 
     l.space_left_logpoints = ui32(0x94)
-    l.offset_first_logpoints = ui32(0x98)
-    l.offset_last_logpoints = ui32(0x9C)
+    l.offset_start_logpoints = ui32(0x98)
+    l.offset_end_logpoints = ui32(0x9C)
 
     return l
 
