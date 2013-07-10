@@ -133,6 +133,9 @@ def read_history(device):
 
     count = buf.uint16_from(0x08)
 
+    if count == 0xffff:
+        count = 0
+
     buf.set_offset(24)
 
     history = []
