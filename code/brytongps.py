@@ -103,6 +103,10 @@ def get_tracks(history, track_ids):
 
 def print_history(history, print_storage=False):
 
+    if not history:
+        print "No tracks"
+        return
+
     i = 0
     for t in history:
         if print_storage:
