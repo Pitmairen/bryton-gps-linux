@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 """
 Provides an interface to SRTM elevation data stored in GeoTIFF Files.
+
+This file is a modified version from the gpxtools project.
+https://pypi.python.org/pypi/gpxtools
+
 """
-import sys, random, re, os, urllib2, zipfile
+import sys, random, re, os, urllib2, zipfile, tempfile
 from math import floor, ceil
 from cStringIO import StringIO
 
 from osgeo import gdal, gdalnumeric
 
-import logging as log
-log.basicConfig(level=log.INFO, format='%(levelname)s %(message)s')
+from brytongps import format_bytes
 
+DOWNLOAD_URL = 'http://droppr.org/srtm/v4.1/6_5x5_TIFs/%s.zip'
 
 def bilinear_interpolation(tl, tr, bl, br, a, b):
     """
@@ -175,22 +179,48 @@ class SrtmLayer(object):
         """
         Download and unzip GeoTIFF file.
         """
-        log.info('Downloading SRTM data file, it may take some time ...')
-        url = 'http://hypersphere.telascience.org/elevation/cgiar_srtm_v4/tiff/zip/%s.ZIP' % srtm_filename[:-4]
-        zobj = StringIO()
-        zobj.write(urllib2.urlopen(url).read())
-        z = zipfile.ZipFile(zobj)
 
-        gpxtools_dir = os.path.expanduser('~/.gpxtools')
-        if not os.path.isdir(gpxtools_dir):
-            os.mkdir(gpxtools_dir)
+        url = DOWNLOAD_URL % srtm_filename[:-4]
+        req = urllib2.urlopen(url)
+        info = req.info()
+        totalSize = int(info["Content-Length"])
 
-        srtm_path = os.path.join(gpxtools_dir, srtm_filename)
-        out_file = open(srtm_path, 'w')
-        out_file.write(z.read(srtm_filename))
+        out = sys.stderr
 
-        z.close()
-        out_file.close()
+        out.write('Downloading elevation db file to: %s\n' % (
+            os.path.join('~/.brytongps', srtm_filename),))
+
+        with tempfile.TemporaryFile() as fp:
+
+            blockSize = 8192
+            count = 0
+            while True:
+                chunk = req.read(blockSize)
+                if not chunk:
+                    break
+                fp.write(chunk)
+                count += 1
+
+                out.write("\r% 3.1f%% of %s"
+                                % (min(100,
+                                       float(count * blockSize) / totalSize * 100),
+                                   format_bytes(totalSize)))
+
+                out.flush()
+
+
+            cache_dir = os.path.expanduser('~/.brytongps')
+            if not os.path.isdir(cache_dir):
+                os.mkdir(cache_dir, 0755)
+
+            srtm_path = os.path.join(cache_dir, srtm_filename)
+
+            with zipfile.ZipFile(fp) as z:
+
+                z.extract(srtm_filename, cache_dir)
+
+            out.write('\nDownload OK\n')
+
 
     def get_srtm_filename(self, lat, lon):
         """
@@ -202,7 +232,7 @@ class SrtmLayer(object):
         ilon = ceil(colmin / 6000.0)
         ilat = ceil(rowmin / 6000.0)
 
-        return 'srtm_%02d_%02d.TIF' % (ilon, ilat)
+        return 'srtm_%02d_%02d.tif' % (ilon, ilat)
 
     def get_elevation(self, lat, lon):
         """
@@ -210,12 +240,22 @@ class SrtmLayer(object):
         """
         srtm_filename = self.get_srtm_filename(lat, lon)
         if srtm_filename not in self._cache:
-            srtm_path = os.path.join(os.path.expanduser('~/.gpxtools'), srtm_filename)
+            srtm_path = os.path.join(os.path.expanduser('~/.brytongps'),
+                                                srtm_filename)
             if not os.path.isfile(srtm_path):
-                self._download_srtm_tiff(srtm_filename)
+                try:
+                    self._download_srtm_tiff(srtm_filename)
+                except Exception as e:
+
+                    if isinstance(e, urllib2.HTTPError) and e.code == 404:
+                            raise RuntimeError(
+                                'Elevation db not available at your location')
+                    else:
+                        raise RuntimeError(
+                            'Failed to download elevation db file %s (%s)' % (
+                                DOWNLOAD_URL % srtm_filename[:-4], str(e)))
 
             self._cache[srtm_filename] = SrtmTiff(srtm_path)
 
         srtm = self._cache[srtm_filename]
         return srtm.get_elevation(lat, lon)
-
