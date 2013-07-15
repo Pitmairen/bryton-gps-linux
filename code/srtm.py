@@ -10,7 +10,13 @@ import sys, random, re, os, urllib2, zipfile, tempfile
 from math import floor, ceil
 from cStringIO import StringIO
 
-from osgeo import gdal, gdalnumeric
+try:
+    from osgeo import gdal, gdalnumeric
+except ImportError:
+    print 'You need the GDAL library (https://pypi.python.org/pypi/GDAL/) ' \
+          'to use the elevation database.'
+    sys.exit(1)
+
 
 from brytongps import format_bytes
 
