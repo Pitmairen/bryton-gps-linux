@@ -321,6 +321,13 @@ def options():
                         'where you started. Only useful if you device has an '
                         'altimeter.')
 
+    p.add_argument('--strip-elevation', action='store_true',
+                   help='Set the elevation to 0 on all trackpoints.')
+
+    p.add_argument('--use-elevation-db', action='store_true',
+                   help='Use the SRTM Elevation Database v4.1 to set the '
+                        'elevation. Requires the GDAL library.')
+
     p.add_argument('--storage', action='store_true',
                    help='This will show the storage usage on the deviced. '
                         'When used together with --list-history or --summary '
@@ -368,6 +375,12 @@ def main():
             if args.fix_elevation:
                 fix_elevation(tracks, args.fix_elevation)
 
+            if args.strip_elevation:
+                strip_elevation(tracks)
+
+            if args.use_elevation_db:
+                set_elevation_from_db(tracks)
+
             if args.gpx:
                 export_tracks(tracks, gpx.track_to_plain_gpx, 'gpx', args)
             if args.gpxx:
@@ -390,6 +403,26 @@ def main():
 
     return 0
 
+
+def strip_elevation(tracks):
+
+    for t in tracks:
+        for seg in t.trackpoints:
+            for tp in seg:
+                tp.elevation = 0
+
+
+def set_elevation_from_db(tracks):
+
+    import srtm
+
+    db = srtm.SrtmLayer()
+
+    for t in tracks:
+        for seg in t.trackpoints:
+            for tp in seg:
+                tp.elevation = round(
+                    db.get_elevation(tp.latitude, tp.longitude), 1)
 
 
 def fix_elevation(tracks, new_elevation):
