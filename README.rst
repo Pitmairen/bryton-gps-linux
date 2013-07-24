@@ -14,7 +14,8 @@ There is also branches for **Rider20**, **Rider20+** and **Rider35**:
   <https://github.com/Pitmairen/bryton-gps-linux/tree/rider20>`_
 - `Rider20+ (works with rider21)
   <https://github.com/Pitmairen/bryton-gps-linux/tree/rider20plus>`_
-
+- `Rider50
+  <https://github.com/Pitmairen/bryton-gps-linux/tree/rider50>`_
 
 It currently has the following functionality:
 
@@ -23,7 +24,9 @@ It currently has the following functionality:
 - List track summary
 - Generate GPX (plain and Garmin extension) and TCX files.
 - Upload to strava.com
+- Elevation correction using the SRTM Elevation Database.
 
+Use the --help argument to see all the options.
 
 The code is released under the GPL v3 license.
 
