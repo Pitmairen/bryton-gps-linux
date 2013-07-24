@@ -134,6 +134,20 @@ class DataBuffer(object):
     def str_from(self, offset, length):
         return self.read_from(offset, length).tostring()
 
+    # Big-endian:
+
+    def be_int32_from(self, offset):
+        return struct.unpack('>i', self.read_from(offset, 4))[0]
+
+    def be_uint32_from(self, offset):
+        return struct.unpack('>I', self.read_from(offset, 4))[0]
+
+    def be_int16_from(self, offset):
+        return struct.unpack('>h', self.read_from(offset, 2))[0]
+
+    def be_uint16_from(self, offset):
+        return struct.unpack('>H', self.read_from(offset, 2))[0]
+
 
 
 def _scsi_pack_cdb(cmd):

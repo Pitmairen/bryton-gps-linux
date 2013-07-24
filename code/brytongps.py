@@ -30,6 +30,7 @@ import time
 from functools import partial
 
 import rider40
+import rider50
 import common
 import gpx
 import tcx
@@ -38,16 +39,21 @@ import strava
 
 
 def find_device():
-
     devices = glob.glob('/dev/disk/by-id/usb-BRYTON_MASS_STORAGE_*')
-    if len(devices) > 1:
-        raise RuntimeError('Multiple Devices Found')
-    elif not devices:
+    fatfs_device = False
+    if not devices:
+        devices = glob.glob('/dev/disk/by-id/usb-Bryton_Flash_Disk_PRAHA_Device-*')
+        fatfs_device = True
+
+
+    # if len(devices) > 1:
+        # raise RuntimeError('Multiple Devices Found')
+    if not devices:
         raise RuntimeError('Device Not Found')
 
     device = devices[0]
 
-    return device
+    return device, fatfs_device
 
 
 def get_device(dev):
@@ -67,11 +73,21 @@ def get_device(dev):
     return rider40, rider40.Rider40(dev)
 
 
-def open_device(dev_path):
-    dev_access = common.DeviceAccess(dev_path)
+
+def get_fatfs_device(dev):
+
+    return rider50, rider50.Rider50(dev)
+
+
+def open_device(dev_path, fatfs_device, fatfs_path):
+
+    if fatfs_device:
+        dev_access = rider50.FSReader(dev_path, fatfs_path)
+    else:
+        dev_access = common.DeviceAccess(dev_path)
+
     dev_access.open()
     return contextlib.closing(dev_access)
-
 
 
 def get_tracks(history, track_ids):
@@ -152,10 +168,15 @@ def print_storage_usage(device):
     _print_storage_row(u, 'logpoints', 'Logpoints')
     _print_storage_row(u, 'tracklist', 'Tracks')
     _print_storage_row(u, 'laps', 'Laps')
+    _print_storage_row(u, 'total', 'Total')
 
 
 
 def _print_storage_row(u, key, title):
+
+    if key not in u:
+        return
+
     print '{:>12} | {:>10} | {:>10} ({:>2}%) | {:>10} ({:>2}%)'.format(
     title,
     format_bytes(u[key]['total']),
@@ -248,6 +269,10 @@ def options():
                    help='Path to the device. If not specified'
                         ' it will try to be autodetected.')
 
+    p.add_argument('--fspath', '-FS',
+                   help='Path to where device filesystem is mounted. '
+                        'If not specified it will try to be autodetected.')
+
     p.add_argument('--list-history', '-L', action='store_true',
                    help='List track history')
 
@@ -317,13 +342,26 @@ def main():
 
     dev_path = args.device
 
+    fatfs_device = True
+    fatfs_path = args.fspath
+
+
     if dev_path is None:
-        dev_path = find_device()
+        dev_path, fatfs_device = find_device()
+
+    if fatfs_device and fatfs_path is None:
+        raise RuntimeError('You currently need to specify the -FS argument and '
+                           'set it to the path where the device is mounted. '
+                           'This will be fixed soon.')
 
 
-    with open_device(dev_path) as dev_access:
+    with open_device(dev_path, fatfs_device, fatfs_path) as dev_access:
 
-        module, device = get_device(dev_access)
+        if fatfs_device:
+            module, device = get_fatfs_device(dev_access)
+        else:
+            module, device = get_device(dev_access)
+
 
         if args.list_history or args.tracks:
             history = list(reversed(module.read_history(device)))
