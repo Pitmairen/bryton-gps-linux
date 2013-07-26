@@ -38,7 +38,7 @@ from common import DataBuffer, TrackPoint, LogPoint, AvgMax
 
 DATE_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
-SUPPORTED_FROMATS = set(['GH1.4.0.56'])
+SUPPORTED_FROMATS = set(['GH1.4.0.56', 'GH1.4.0.62'])
 
 
 class FSReader(object):
@@ -290,7 +290,10 @@ def _read_trackpoint_segments(buf):
 
     version = buf.str_from(0x20, 10)
     if version not in SUPPORTED_FROMATS:
-        warnings.warn('Untested gps file format.', RuntimeWarning)
+        warnings.warn('Untested gps file format version. '
+                      "It's probably ok, but you should check that the "
+                      'values in the output file looks correct.' ,
+                      RuntimeWarning)
 
 
     segments = []
@@ -387,7 +390,10 @@ def _read_logpoint_segments(buf):
 
     version = buf.str_from(0x20, 10)
     if version not in SUPPORTED_FROMATS:
-        warnings.warn('Untested log file format.', RuntimeWarning)
+        warnings.warn('Untested log file format version. '
+                      "It's probably ok, but you should check that the "
+                      'values in the output file looks correct.' ,
+                      RuntimeWarning)
 
 
     segments = []
