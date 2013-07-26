@@ -172,7 +172,18 @@ class Track(rider40.Track):
 
         data = self.device.open_summary_file(self._id)
 
-        return _read_summaries(data)
+        summary, laps = _read_summaries(data)
+
+        if laps and laps[-1].end < summary.end:
+            laps.append(_calculate_last_lap(self, laps, summary))
+
+        return summary, laps
+
+
+    @cached_property
+    def lap_count(self):
+        return len(self._read_summaries[1])
+
 
 
 
@@ -218,10 +229,23 @@ def _str_to_timestamp(datetime_str):
 
 def _read_summaries(xml_content):
 
-    s = rider40.Summary()
-
     data = xml.fromstring(xml_content)
+
+    laps = []
+    for lap_data in data.findall('lap'):
+        laps.append(_read_summary(lap_data))
+
     data = data.find('summary')
+
+    summary = _read_summary(data)
+
+
+    return summary, laps
+
+
+def _read_summary(data):
+
+    s = rider40.Summary()
 
     s.start = _str_to_timestamp(data.get('start'))
     s.end = _str_to_timestamp(data.get('end'))
@@ -250,11 +274,7 @@ def _read_summaries(xml_content):
     s.calories = int(float(data.find('calorie').text))
     s.ride_time = int(float(data.find('rtime').text))
 
-    return s, []
-
-
-
-
+    return s
 
 
 def _read_trackpoint_segments(buf):
@@ -418,5 +438,70 @@ def _read_logpoints(buf, start_time, count):
         buf.set_offset(22)
 
     return log_points
+
+
+
+
+def _calculate_last_lap(track, laps, summary):
+
+    laps = laps[:]
+
+    last_lap = ll = rider40.Summary()
+    ll.start = laps[-1].end
+    ll.end = summary.end
+    ll.distance = summary.distance
+    ll.ride_time = summary.ride_time
+    ll.calories = summary.calories
+    ll.altitude_gain = summary.altitude_gain
+    ll.altitude_loss = summary.altitude_loss
+
+
+    def _pop_lap():
+        lap = l = laps.pop(0)
+        ll.distance -= l.distance
+        ll.ride_time = l.ride_time
+        ll.calories -= l.calories
+        ll.altitude_gain -= l.altitude_gain
+        ll.altitude_loss -= l.altitude_loss
+        return lap
+
+
+    speed = []
+    hr = []
+    cadence = []
+
+    lap = _pop_lap()
+
+    for seg in track.merged_segments(remove_empty_track_segs=False):
+
+        for tp, lp in seg:
+
+            timestamp = tp.timestamp if tp is not None else lp.timestamp
+
+            if timestamp > last_lap.start:
+                if lp:
+                    if lp.speed is not None and lp.speed > 0:
+                        speed.append(lp.speed)
+                    if lp.heartrate is not None and lp.heartrate > 0:
+                        hr.append(lp.heartrate)
+                    if lp.cadence is not None and lp.cadence > 0:
+                        cadence.append(lp.cadence)
+
+            elif timestamp <= lap.end:
+                continue
+            else:
+                lap = _pop_lap()
+
+    if speed:
+        last_lap.speed = AvgMax(sum(speed) / len(speed), max(speed))
+    else:
+        last_lap.speed = AvgMax(0, 0)
+
+    if hr:
+        last_lap.heartrate = AvgMax(sum(hr) / len(hr), max(hr))
+    if cadence:
+        last_lap.cadence = AvgMax(sum(cadence) / len(cadence), max(cadence))
+
+    return last_lap
 
 
