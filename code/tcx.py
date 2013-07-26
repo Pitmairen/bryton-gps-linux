@@ -151,9 +151,9 @@ def create_lap_ext(sum, parent, ns=aext_ns):
         xml.SubElement(lx, ns('MaxWatts')).text = format(sum.watts.max, 'd')
 
 
-def create_laps(track, parent, ns=tcx_ns):
+def create_laps(track, no_laps, parent, ns=tcx_ns):
 
-    for sum, segments in _get_lap_trackpoints(track):
+    for sum, segments in _get_lap_trackpoints(track, no_laps):
 
         lap = create_lap(sum, parent, ns)
 
@@ -202,7 +202,7 @@ def create_author_element(parent, ns=tcx_ns):
 
 
 
-def track_to_tcx(track, pretty=False, fake_garmin_device=False):
+def track_to_tcx(track, pretty=False, fake_garmin_device=False, no_laps=False):
 
     ns = tcx_ns
 
@@ -223,7 +223,7 @@ def track_to_tcx(track, pretty=False, fake_garmin_device=False):
         format_timestamp(track.timestamp)
 
 
-    create_laps(track, activity, ns)
+    create_laps(track, no_laps, activity, ns)
 
     if fake_garmin_device:
         create_fake_creator_element(activity, ns)
@@ -243,9 +243,12 @@ def track_to_tcx(track, pretty=False, fake_garmin_device=False):
     return "<?xml version='1.0' encoding='utf-8'?>\n" + out
 
 
-def _get_lap_trackpoints(track):
+def _get_lap_trackpoints(track, no_laps):
 
-    summaries = track.lap_summaries[:]
+    if no_laps:
+        summaries = [track.summary]
+    else:
+        summaries = track.lap_summaries[:]
 
     lap = (summaries.pop(0), [[]])
     laps = [lap]
