@@ -186,6 +186,12 @@ class Track(rider40.Track):
 
 
 
+class LogPointSegment(rider40.LogPointSegment):
+
+    _SEGMENT_TYPES = (0, 1, 2, 3)
+
+
+
 
 
 def read_history(device):
@@ -289,40 +295,53 @@ def _read_trackpoint_segments(buf):
 
     segments = []
 
-    timestamp = buf.uint32_from(0x18)
+    segment_type = count = buf.uint8_from(0x11) #Not sure if this is correct
 
+    start_timestamp = buf.uint32_from(0x18)
     buf.set_offset(0x30)
 
+    count = buf.uint32_from(0)
+    buf.set_offset(4)
+
+    timestamp = start_timestamp
+
     while True:
-        seg = _read_trackpoint_segment(buf, timestamp)
+        seg, num_read = _read_trackpoint_segment(buf, start_timestamp,
+                                                 segment_type, timestamp, count)
 
         segments.append(seg)
 
-        break
+        count = count - num_read
+
+        if count > 0:
+            #It's a pause
+            buf.set_offset(20)
+            segment_type = buf.uint8_from(1)
+            timestamp = start_timestamp + buf.be_uint32_from(16)
+            buf.set_offset(20)
+        else:
+            break
 
     return segments
 
 
 
-def _read_trackpoint_segment(buf, start_timestamp):
+def _read_trackpoint_segment(buf, start_timestamp, segment_type,
+                             segment_timestamp, count):
 
     s = rider40.TrackPointSegment()
     s.point_size = 20
 
-    s.timestamp = start_timestamp
-    s.segment_type = 0
-
-    count = buf.uint32_from(0)
-
-    buf.set_offset(4)
+    s.timestamp = segment_timestamp
+    s.segment_type = segment_type
 
     if count > 0:
 
-        track_points = _read_trackpoints(buf, s.timestamp, count)
+        track_points, num_read = _read_trackpoints(buf, start_timestamp, count)
 
         s.extend(track_points)
 
-    return s
+    return s, num_read
 
 
 
@@ -331,6 +350,10 @@ def _read_trackpoints(buf, start_time, count):
     track_points = []
 
     for i in range(count):
+
+        if buf.be_uint16_from(0) == 1 and buf.be_uint32_from(4) == 0:
+            #It's a pause
+            return track_points, i # don't add 1 to i
 
         time = start_time + buf.be_uint32_from(16)
 
@@ -350,7 +373,7 @@ def _read_trackpoints(buf, start_time, count):
 
         buf.set_offset(20)
 
-    return track_points
+    return track_points, i + 1
 
 
 
@@ -369,41 +392,61 @@ def _read_logpoint_segments(buf):
 
     segments = []
 
-    timestamp = buf.uint32_from(0x18)
+
+    segment_type = count = buf.uint8_from(0x11) #Not sure if this is correct
+
+    start_timestamp = buf.uint32_from(0x18)
 
     buf.set_offset(0x30)
-
-    while True:
-        seg = _read_logpoint_segment(buf, timestamp)
-
-        segments.append(seg)
-
-        break
-
-    return segments
-
-
-
-def _read_logpoint_segment(buf, start_timestamp):
-
-    s = rider40.LogPointSegment()
-
-    s.point_size = 22
-    s.timestamp = start_timestamp
-
-    s.segment_type = 0x02
 
     count = buf.uint32_from(0)
 
     buf.set_offset(4)
 
+    timestamp = start_timestamp
+
+    while True:
+
+
+        seg, num_read = _read_logpoint_segment(buf, start_timestamp,
+                                               segment_type, timestamp, count)
+
+        segments.append(seg)
+
+        count = count - num_read
+
+        if count > 0:
+            #It's a pause
+            buf.set_offset(22)
+            segment_type = buf.uint8_from(17)
+            timestamp = start_timestamp + buf.be_uint32_from(0)
+            buf.set_offset(22)
+        else:
+            break
+
+
+
+    return segments
+
+
+
+def _read_logpoint_segment(buf, start_timestamp, segment_type,
+                           segment_timestamp, count):
+
+    s = LogPointSegment()
+
+    s.point_size = 22
+    s.timestamp = segment_timestamp
+
+    s.segment_type = segment_type
+
     if count > 0:
 
-        log_points = _read_logpoints(buf, s.timestamp, count)
+        log_points, num_read = _read_logpoints(buf, start_timestamp, count)
 
         s.extend(log_points)
 
-    return s
+    return s, num_read
 
 
 
@@ -412,6 +455,11 @@ def _read_logpoints(buf, start_time, count):
     log_points = []
 
     for i in range(count):
+
+        if buf.be_uint16_from(4) == 0xfefe and buf.be_uint32_from(6) == 0:
+            #It's a pause
+            return log_points, i # don't add 1 to i
+
 
         time = start_time + buf.be_uint32_from(0)
 
@@ -437,7 +485,7 @@ def _read_logpoints(buf, start_time, count):
 
         buf.set_offset(22)
 
-    return log_points
+    return log_points, i + 1
 
 
 
