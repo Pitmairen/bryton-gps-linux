@@ -42,13 +42,13 @@ def find_device():
     devices = glob.glob('/dev/disk/by-id/usb-BRYTON_MASS_STORAGE_*')
     fatfs_device = False
     if not devices:
-        devices = glob.glob('/dev/disk/by-id/usb-Bryton_Flash_Disk_PRAHA_Device-*')
+        devices = glob.glob('/dev/disk/by-id/usb-Bryton_Flash_Disk_PRAHA_Device-0:0-part5')
         fatfs_device = True
 
 
-    # if len(devices) > 1:
-        # raise RuntimeError('Multiple Devices Found')
-    if not devices:
+    if len(devices) > 1:
+        raise RuntimeError('Multiple Devices Found')
+    elif not devices:
         raise RuntimeError('Device Not Found')
 
     device = devices[0]
@@ -348,11 +348,6 @@ def main():
 
     if dev_path is None:
         dev_path, fatfs_device = find_device()
-
-    if fatfs_device and fatfs_path is None:
-        raise RuntimeError('You currently need to specify the -FS argument and '
-                           'set it to the path where the device is mounted. '
-                           'This will be fixed soon.')
 
 
     with open_device(dev_path, fatfs_device, fatfs_path) as dev_access:
