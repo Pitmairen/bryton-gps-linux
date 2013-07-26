@@ -134,6 +134,9 @@ def print_summary(s, track=None, print_storage=False):
         print '  Watts: {0}/{1} (avg/max)'.format(s.watts.avg,
                                                 s.watts.max)
 
+    if track is not None and track.lap_count > 0:
+        print '   Laps: {0}'.format(len(track.lap_summaries))
+
     if print_storage:
         u = track.storage_usage
         print 'Storage: Trackpoints', \
