@@ -57,7 +57,7 @@ def _get_response(browser):
 
 class StravaUploader(object):
 
-    def __init__(self, fake_garmin_device=False):
+    def __init__(self, fake_garmin_device=False, no_laps=False):
 
         if not has_mechanize:
             raise RuntimeError('To upload to strava you need the ' \
@@ -65,6 +65,7 @@ class StravaUploader(object):
 
         self.token = None
         self.fake_garmin_device = fake_garmin_device
+        self.no_laps = no_laps
 
         self.browser = mechanize.Browser()
 
@@ -106,7 +107,8 @@ class StravaUploader(object):
 
 
         data = tcx.track_to_tcx(track, fake_garmin_device= \
-                                      self.fake_garmin_device)
+                                      self.fake_garmin_device,
+                                    no_laps=self.no_laps)
 
         self.browser.form.add_file(StringIO.StringIO(data),
                                    'text/plain',

@@ -151,6 +151,9 @@ def print_summary(s, track=None, print_storage=False):
         print '  Watts: {0}/{1} (avg/max)'.format(s.watts.avg,
                                                 s.watts.max)
 
+    if track is not None and track.lap_count > 0:
+        print '   Laps: {0}'.format(len(track.lap_summaries))
+
     if print_storage:
         u = track.storage_usage
         print 'Storage: Trackpoints', \
@@ -217,7 +220,8 @@ def export_tracks(tracks, export_func, file_ext, args):
 
 def export_fake_garmin(tracks, args):
 
-    export_func = partial(tcx.track_to_tcx, fake_garmin_device=True)
+    export_func = partial(tcx.track_to_tcx, fake_garmin_device=True,
+                         no_laps=args.no_laps)
 
     export_tracks(tracks, export_func, 'tcx', args)
 
@@ -234,7 +238,8 @@ def upload_strava(tracks, args, fake_garmin_device=False):
         password = getpass.getpass('Strava.com password:')
 
 
-    uploader = strava.StravaUploader(fake_garmin_device=fake_garmin_device)
+    uploader = strava.StravaUploader(fake_garmin_device=fake_garmin_device,
+                                    no_laps=args.no_laps)
 
     try:
         print 'Authenticating to strava.com'
@@ -332,6 +337,13 @@ def options():
                    help='This will show the storage usage on the deviced. '
                         'When used together with --list-history or --summary '
                         'the storage space used by each track will be shown.')
+
+    p.add_argument('--no-laps', action='store_true',
+                   help='When this is used the TCX files generated will not '
+                        'use the laps that are recorded in a track. '
+                        'This will only have effect when generating TCX files '
+                        'and uploading to strava.com')
+
     return p
 
 
@@ -389,7 +401,10 @@ def main():
                 if args.fake_garmin:
                     export_fake_garmin(tracks, args)
                 else:
-                    export_tracks(tracks, tcx.track_to_tcx, 'tcx', args)
+                    export_tracks(tracks,
+                              partial(tcx.track_to_tcx, no_laps=args.no_laps),
+                                  'tcx', args)
+
             if args.strava:
                 upload_strava(tracks, args,
                               fake_garmin_device=args.fake_garmin)
