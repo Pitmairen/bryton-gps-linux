@@ -32,6 +32,7 @@ from functools import partial
 import rider40
 import gpx
 import tcx
+import json_export
 import strava
 
 
@@ -269,6 +270,8 @@ def options():
                         'of the selected tracks.')
     p.add_argument('--tcx', action='store_true',
                    help='Generate TCX files of the selected tracks.')
+    p.add_argument('--json', action='store_true',
+                   help='Generate JSON files of the selected tracks.')
     p.add_argument('--save-to', '-S',
                    help='Directory to store expored files.')
     p.add_argument('--out-name', '-O',
@@ -365,6 +368,8 @@ def main():
                 export_tracks(tracks, gpx.track_to_plain_gpx, 'gpx', args)
             if args.gpxx:
                 export_tracks(tracks, gpx.track_to_garmin_gpxx, 'gpx', args)
+            if args.json:
+                export_tracks(tracks, json_export.track_to_json, 'json', args)
             if args.tcx:
                 if args.fake_garmin:
                     export_fake_garmin(tracks, args)
