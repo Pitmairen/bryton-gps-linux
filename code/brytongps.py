@@ -86,7 +86,7 @@ def open_device(dev_path, fatfs_device, fatfs_path):
         dev_access = rider50.FSReader(dev_path, fatfs_path)
     else:
         import device_access
-        dev_access = common.DeviceAccess(dev_path)
+        dev_access = device_access.DeviceAccess(dev_path)
 
     dev_access.open()
     return contextlib.closing(dev_access)
