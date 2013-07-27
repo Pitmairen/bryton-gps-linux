@@ -18,16 +18,6 @@
 #
 
 import struct
-import array
-import errno
-import sys
-
-try:
-    import py_sg
-except ImportError, e:
-    print('You need to install the "py_sg" module.')
-    sys.exit(1)
-
 
 
 class AvgMax(object):
@@ -133,69 +123,5 @@ class DataBuffer(object):
 
     def str_from(self, offset, length):
         return self.read_from(offset, length).tostring()
-
-
-
-def _scsi_pack_cdb(cmd):
-
-    return struct.pack('{0}B'.format(len(cmd)), *cmd)
-
-
-
-def _scsi_read10(addr, block_count, reserved_byte=0):
-
-    cdb = [0x28, 0, 0, 0, 0, 0, reserved_byte, 0, 0, 0]
-
-
-    a = struct.pack('>I', addr)
-    cdb[2] = ord(a[0])
-    cdb[3] = ord(a[1])
-    cdb[4] = ord(a[2])
-    cdb[5] = ord(a[3])
-
-    s = struct.pack('>H', block_count)
-
-    cdb[7] = ord(s[0])
-    cdb[8] = ord(s[1])
-
-    return _scsi_pack_cdb(cdb)
-
-
-
-class DeviceAccess(object):
-
-    BLOCK_SIZE = 512
-
-    def __init__(self, dev_path):
-
-        self.dev_path = dev_path
-        self.dev = None
-
-
-    def open(self):
-
-        try:
-            self.dev = open(self.dev_path, 'rb')
-        except IOError as e:
-            if e.errno == errno.EACCES:
-                raise RuntimeError('Failed to open device "{0}" '
-                                   '(Permission denied).'.format(
-                                   self.dev_path))
-            raise
-
-
-    def close(self):
-        self.dev.close()
-        self.dev = None
-
-
-    def read_addr(self, addr, block_count=8, read_type=0):
-
-
-        cdb = _scsi_read10(addr, block_count, reserved_byte=read_type)
-
-        data = py_sg.read(self.dev, cdb, self.BLOCK_SIZE * block_count)
-
-        return array.array('B', data)
 
 

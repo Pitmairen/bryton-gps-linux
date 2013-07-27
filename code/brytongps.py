@@ -31,7 +31,6 @@ from functools import partial
 
 import rider40
 import rider35
-import common
 import gpx
 import tcx
 import strava
@@ -72,7 +71,8 @@ def get_device(dev):
 
 
 def open_device(dev_path):
-    dev_access = common.DeviceAccess(dev_path)
+    import device_access
+    dev_access = device_access.DeviceAccess(dev_path)
     dev_access.open()
     return contextlib.closing(dev_access)
 
