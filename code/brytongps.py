@@ -356,7 +356,6 @@ def main():
 
             if args.summary:
                 print_summaries(tracks, args.storage)
-                return 0
 
             if args.fix_elevation:
                 fix_elevation(tracks, args.fix_elevation)
