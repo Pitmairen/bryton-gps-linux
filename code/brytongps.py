@@ -33,8 +33,10 @@ import rider40
 import rider20
 import gpx
 import tcx
+import json_export
 import strava
 
+from common import print_msg
 
 
 def find_device():
@@ -91,18 +93,18 @@ def get_tracks(history, track_ids):
 def print_history(history, print_storage=False):
 
     if not history:
-        print "No tracks"
+        print_msg("No tracks")
         return
 
     i = 0
     for t in history:
         if print_storage:
             u = t.storage_usage
-            print format(i, '2d'), ':', t.name, ' - Trackpoints ', \
+            print_msg(format(i, '2d'), ':', t.name, ' - Trackpoints ', \
                     format_bytes(u['trackpoints']), ' - ', \
-                    'Logpoints', format_bytes(u['logpoints'])
+                    'Logpoints', format_bytes(u['logpoints']))
         else:
-            print format(i, '2d'), ':', t.name
+            print_msg(format(i, '2d'), ':', t.name)
         i += 1
 
 
@@ -117,41 +119,43 @@ def print_summary(s, track=None, print_storage=False):
 
     ts = datetime.datetime.fromtimestamp
 
-    print '==================================================='
-    print ts(s.start)
-    print '{0} - {1} ({2})'.format(ts(s.start), ts(s.end),
-                                   datetime.timedelta(seconds=s.ride_time))
+    print_msg('===================================================')
+    print_msg(ts(s.start))
+    print_msg('{0} - {1} ({2})'.format(ts(s.start), ts(s.end),
+                                   datetime.timedelta(seconds=s.ride_time)))
 
-    print '   Dist: {0:.2f}Km'.format(s.distance / 1000.0)
-    print '    Cal: {0}'.format(s.calories)
-    print '    Alt: {0}m / {1}m (gain/loss)'.format(s.altitude_gain,
-                                                  s.altitude_loss)
-    print '  Speed: {0}Kph / {1}Kph (avg/max)'.format(s.speed.avg, s.speed.max)
+    print_msg('   Dist: {0:.2f}Km'.format(s.distance / 1000.0))
+    print_msg('    Cal: {0}'.format(s.calories))
+    print_msg('    Alt: {0}m / {1}m (gain/loss)'.format(s.altitude_gain,
+                                                  s.altitude_loss))
+    print_msg('  Speed: {0}Kph / {1}Kph (avg/max)'.format(s.speed.avg,
+                                                          s.speed.max))
 
     if s.heartrate is not None and s.heartrate.max > 0:
-        print '     Hr: {0}bpm / {1}bpm (avg/max)'.format(s.heartrate.avg,
-                                                        s.heartrate.max)
+        print_msg('     Hr: {0}bpm / {1}bpm (avg/max)'.format(s.heartrate.avg,
+                                                        s.heartrate.max))
     if s.cadence is not None and s.cadence.max > 0:
-        print '    Cad: {0}rpm / {1}rpm (avg/max)'.format(s.cadence.avg,
-                                                        s.cadence.max)
+        print_msg('    Cad: {0}rpm / {1}rpm (avg/max)'.format(s.cadence.avg,
+                                                        s.cadence.max))
     if s.watts is not None and s.watts.max > 0:
-        print '  Watts: {0}/{1} (avg/max)'.format(s.watts.avg,
-                                                s.watts.max)
+        print_msg('  Watts: {0}/{1} (avg/max)'.format(s.watts.avg,
+                                                s.watts.max))
 
     if track is not None and track.lap_count > 0:
-        print '   Laps: {0}'.format(len(track.lap_summaries))
+        print_msg('   Laps: {0}'.format(len(track.lap_summaries)))
 
     if print_storage:
         u = track.storage_usage
-        print 'Storage: Trackpoints', \
+        print_msg('Storage: Trackpoints', \
                     format_bytes(u['trackpoints']), ' - ', \
-                    'Logpoints', format_bytes(u['logpoints'])
+                    'Logpoints', format_bytes(u['logpoints']))
 
 
 def print_storage_usage(device):
 
-    print '{:>12} | {:>10} | {:>16} | {:>10}'.format('Type', 'Total', 'Used', 'Left')
-    print '{}|{}|{}|{}'.format('-'*13, '-'*12, '-'*18, '-'*17)
+    print_msg('{:>12} | {:>10} | {:>16} | {:>10}'.format('Type', 'Total',
+                                                         'Used', 'Left'))
+    print_msg('{}|{}|{}|{}'.format('-'*13, '-'*12, '-'*18, '-'*17))
 
     u = device.read_storage_usage()
 
@@ -163,13 +167,13 @@ def print_storage_usage(device):
 
 
 def _print_storage_row(u, key, title):
-    print '{:>12} | {:>10} | {:>10} ({:>2}%) | {:>10} ({:>2}%)'.format(
+    print_msg('{:>12} | {:>10} | {:>10} ({:>2}%) | {:>10} ({:>2}%)'.format(
     title,
     format_bytes(u[key]['total']),
     format_bytes(u[key]['total'] - u[key]['left']),
     100 * (u[key]['total'] - u[key]['left']) / u[key]['total'],
     format_bytes(u[key]['left']),
-    100 - 100 * (u[key]['total'] - u[key]['left']) / u[key]['total'])
+    100 - 100 * (u[key]['total'] - u[key]['left']) / u[key]['total']))
 
 
 
@@ -212,7 +216,7 @@ def export_fake_garmin(tracks, args):
 def upload_strava(tracks, args, fake_garmin_device=False):
 
     if args.strava_email is None:
-        print 'Missing email for strava.com'
+        print_msg('Missing email for strava.com')
         return
 
     password = args.strava_password
@@ -224,28 +228,28 @@ def upload_strava(tracks, args, fake_garmin_device=False):
                                     no_laps=args.no_laps)
 
     try:
-        print 'Authenticating to strava.com'
+        print_msg('Authenticating to strava.com')
         uploader.authenticate(args.strava_email, password)
     except strava.StravaError, e:
-        print 'StravaError:', e.reason
+        print_msg('StravaError:', e.reason)
         return
 
     for t in tracks:
 
         try:
-            print 'Uploading track: {0}'.format(t.name)
+            print_msg('Uploading track: {0}'.format(t.name))
             upload = uploader.upload(t)
 
             while not upload.finished:
                 time.sleep(3)
                 p = upload.check_progress()
 
-            print 'Uploaded OK'
+            print_msg('Uploaded OK')
 
 
 
         except strava.StravaError, e:
-            print 'StravaError:', e.reason
+            print_msg('StravaError:', e.reason)
 
 
 
@@ -273,6 +277,8 @@ def options():
                         'of the selected tracks.')
     p.add_argument('--tcx', action='store_true',
                    help='Generate TCX files of the selected tracks.')
+    p.add_argument('--json', action='store_true',
+                   help='Generate JSON files of the selected tracks.')
     p.add_argument('--save-to', '-S',
                    help='Directory to store expored files.')
     p.add_argument('--out-name', '-O',
@@ -354,7 +360,6 @@ def main():
 
             if args.summary:
                 print_summaries(tracks, args.storage)
-                return 0
 
             if args.fix_elevation:
                 fix_elevation(tracks, args.fix_elevation)
@@ -369,6 +374,8 @@ def main():
                 export_tracks(tracks, gpx.track_to_plain_gpx, 'gpx', args)
             if args.gpxx:
                 export_tracks(tracks, gpx.track_to_garmin_gpxx, 'gpx', args)
+            if args.json:
+                export_tracks(tracks, json_export.track_to_json, 'json', args)
             if args.tcx:
                 if args.fake_garmin:
                     export_fake_garmin(tracks, args)
@@ -446,7 +453,7 @@ if __name__ == '__main__':
     try:
         sys.exit(main())
     except RuntimeError, e:
-        print 'Error: ', e.message
+        print_msg('Error: ', e.message)
         sys.exit(1)
 
 

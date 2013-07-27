@@ -17,7 +17,14 @@
 # along with Bryton-GPS-Linux.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from __future__ import print_function
+
+import sys
 import struct
+
+
+def print_msg(msg):
+    print(msg, sep=' ', file=sys.stderr)
 
 
 class AvgMax(object):

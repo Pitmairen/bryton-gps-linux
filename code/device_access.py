@@ -22,10 +22,12 @@ import array
 import errno
 import sys
 
+from common import print_msg
+
 try:
     import py_sg
 except ImportError, e:
-    print('You need to install the "py_sg" module.')
+    print_msg('You need to install the "py_sg" module.')
     sys.exit(1)
 
 
