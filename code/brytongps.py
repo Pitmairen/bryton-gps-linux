@@ -31,7 +31,6 @@ from functools import partial
 
 import rider40
 import rider20p
-import common
 import gpx
 import tcx
 import strava
@@ -84,6 +83,7 @@ def open_device(dev_path, fatfs_device, fatfs_path):
     if fatfs_device:
         dev_access = rider20p.FSReader(dev_path, fatfs_path)
     else:
+        import device_access
         dev_access = common.DeviceAccess(dev_path)
 
     dev_access.open()
