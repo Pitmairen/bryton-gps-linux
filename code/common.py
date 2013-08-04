@@ -23,8 +23,8 @@ import sys
 import struct
 
 
-def print_msg(msg):
-    print(msg, sep=' ', file=sys.stderr)
+def print_msg(msg, *args):
+    print(msg, *args, sep=' ', file=sys.stderr)
 
 
 class AvgMax(object):
