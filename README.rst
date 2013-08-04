@@ -45,7 +45,11 @@ It probably works with other devices.
 Usage:
 ------
 
-You need Python 2.7 and the `py_sg module <https://pypi.python.org/pypi/py_sg/>`_.
+You need Python 2.7.
+
+And if you are using one of Rider20, Rider40, Rider35, you also need the
+`py_sg module <https://pypi.python.org/pypi/py_sg/>`_.
+Rider50 and Rider20+ don't need this.
 
 This can be installed with pip or easy_install:
 
@@ -53,6 +57,7 @@ This can be installed with pip or easy_install:
 
 
 To access the device without root access you can use the following udev rule:
+(Not needed by Rider50 and Rider20+)
 
     SUBSYSTEMS=="usb", ATTRS{idVendor}=="0483", ATTRS{idProduct}=="5720", GROUP="users"
 
