@@ -441,7 +441,7 @@ def _read_logpoint_segment(buf):
 
     if count > 0:
 
-        if format == 0x4304:
+        if format in (0x4304, 0x4504):
             log_points = _read_logpoints_format_1(buf, s.timestamp, count)
             s.point_size = 3
         elif format == 0x7704:
