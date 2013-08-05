@@ -258,7 +258,12 @@ def _read_trackpoint_segment(buf):
 
     lon_start = buf.int32_from(0x04)
     lat_start = buf.int32_from(0x08)
-    elevation_start = (buf.uint16_from(0x14) - 4000) / 4.0
+
+    elevation_start = buf.uint16_from(0x14)
+    if elevation_start == 0xffff:
+        elevation_start = 0
+    else:
+        elevation_start = (buf.uint16_from(0x14) - 4000) / 4.0
 
     count = buf.uint32_from(0x20)
 
@@ -310,13 +315,15 @@ def _read_trackpoints_format_1(buf, time, lon, lat, ele, count):
 
         time += buf.uint8_from(0x2)
 
-        e = buf.int8_from(0x4) / 10.0
-        if e < 0:
-            e = math.ceil(e)
-        else:
-            e = math.floor(e)
+        e = buf.int8_from(0x4)
+        if e != -1:
+            e /= 10.0
+            if e < 0:
+                e = math.ceil(e)
+            else:
+                e = math.floor(e)
 
-        ele += e
+            ele += e
 
 
         lon += buf.int16_from(0x06)
@@ -351,13 +358,15 @@ def _read_trackpoints_format_2(buf, time, lon, lat, ele, count):
 
         time += 4 *  buf.uint8_from(0x2)
 
-        e = buf.int8_from(0x4) / 10.0
-        if e < 0:
-            e = math.ceil(e)
-        else:
-            e = math.floor(e)
+        e = buf.int8_from(0x4)
+        if e != -1:
+            e /= 10.0
+            if e < 0:
+                e = math.ceil(e)
+            else:
+                e = math.floor(e)
 
-        ele += e
+            ele += e
 
 
         lon += buf.int16_from(0x06)
