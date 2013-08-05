@@ -241,8 +241,19 @@ def _read_trackpoint_segment(buf):
         # seems to work with rider20plus
         s.segment_type = seg_type - 0x30
     except RuntimeError:
-        # seems to work with rider21
-        s.segment_type = seg_type - 0x40
+
+        try:
+            # seems to work with rider21
+            s.segment_type = seg_type - 0x40
+        except RuntimeError:
+
+            try:
+                s.segment_type = seg_type
+            except RuntimeError:
+                warnings.warn("Unknown track segment type.", RuntimeWarning)
+                #Just set it to SEGMENT_LAST it is not currently used anyway
+                s.segment_type = rider40.SEGMENT_LAST
+
 
 
     lon_start = buf.int32_from(0x04)
@@ -402,7 +413,13 @@ def _read_logpoint_segment(buf):
     try:
         s.segment_type = buf.uint8_from(0x0c) - 0xE0
     except RuntimeError, e:
-        s.segment_type = buf.uint8_from(0x0c) - 0x40
+        try:
+            s.segment_type = buf.uint8_from(0x0c) - 0x40
+        except RuntimeError:
+            warnings.warn("Unknown track segment type.", RuntimeWarning)
+            #Just set it to SEGMENT_LAST it is not currently used anyway
+            s.segment_type = 0x0E
+
 
 
     count = buf.uint16_from(0x0a)
