@@ -112,14 +112,20 @@ class Rider40(object):
     def last_log_entry(self):
 
         buf = self.read_from_offset(0)
+        found_first = False
 
         for i in range(0x6000/256):
 
-            if buf.uint16_from(0) == 0xffff:
-                buf.set_offset(-256)
+
+            if not found_first and buf.uint16_from(0) != 0xffff:
+                found_first = True
+            elif found_first and buf.uint16_from(0) == 0xffff:
                 break
 
             buf.set_offset(256)
+
+
+        buf.set_offset(-256)
 
         return _read_log_entry(buf)
 
