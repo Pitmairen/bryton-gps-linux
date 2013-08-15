@@ -338,7 +338,7 @@ class _Segment(object):
 
 class TrackPointSegment(list, _Segment):
 
-    _SEGMENT_TYPES = (0, 1, 2, 3)
+    _SEGMENT_TYPES = (0, 1, 2, 3, 4)
 
     timestamp = None
     _offset_logpoints = None
@@ -348,7 +348,7 @@ class TrackPointSegment(list, _Segment):
 
 class LogPointSegment(list, _Segment):
 
-    _SEGMENT_TYPES = (0x02, 0x06, 0x0A, 0x0E)
+    _SEGMENT_TYPES = (0x02, 0x06, 0x0A, 0x0E, 0x12)
 
     timestamp = None
 
