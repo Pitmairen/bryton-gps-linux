@@ -338,6 +338,7 @@ def _read_trackpoint_segment(buf, start_timestamp, segment_type,
     s.timestamp = segment_timestamp
     s.segment_type = segment_type
 
+    num_read = 0
     if count > 0:
 
         track_points, num_read = _read_trackpoints(buf, start_timestamp, count)
@@ -446,6 +447,7 @@ def _read_logpoint_segment(buf, start_timestamp, segment_type,
 
     s.segment_type = segment_type
 
+    num_read = 0
     if count > 0:
 
         log_points, num_read = _read_logpoints(buf, start_timestamp, count)
