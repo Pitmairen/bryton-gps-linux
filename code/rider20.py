@@ -291,10 +291,6 @@ def _read_trackpoints_format_2(buf, time, lon, lat, ele, count):
     for i in range(count):
 
         time_val = buf.uint8_from(0x5)
-        if time_val != 1:
-            warnings.warn('Unexpected time value in trackpoint format. '
-                          'Test data is needed to verify if this value is correct.',
-                          RuntimeWarning)
 
         time += 4 * time_val
 
@@ -408,7 +404,11 @@ def _read_logpoints_format_2(buf, time, count):
 
         cad = buf.uint8_from(0x01)
         if cad != 0xff:
-            lp.cadence = cad
+            # We need to multiply by 0.9375 to get the same value
+            # as in the bdx files from bryton. I don't know why.
+            # I round it and make an int because the rest of the code
+            # expect it to be an integer.
+            lp.cadence = int(cad * 0.9375)
 
         hr = buf.uint8_from(0x02)
         if hr != 0xff:
@@ -444,7 +444,11 @@ def _read_logpoints_format_3(buf, time, count):
 
         cad = buf.uint8_from(0x01)
         if cad != 0xff:
-            lp.cadence = cad
+            # We need to multiply by 0.9375 to get the same value
+            # as in the bdx files from bryton. I don't know why.
+            # I round it and make an int because the rest of the code
+            # expect it to be an integer.
+            lp.cadence = int(cad * 0.9375)
 
         log_points.append(lp)
 
