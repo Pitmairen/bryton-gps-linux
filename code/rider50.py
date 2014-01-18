@@ -355,6 +355,10 @@ def _read_trackpoints(buf, start_time, count):
 
     for i in range(count):
 
+        if buf.abs_position == buf.data_len:
+            # Reached end of file
+            return track_points, count
+
         if buf.be_uint16_from(0) == 1 and buf.be_uint32_from(4) == 0:
             #It's a pause
             return track_points, i # don't add 1 to i
@@ -463,6 +467,12 @@ def _read_logpoints(buf, start_time, count):
     log_points = []
 
     for i in range(count):
+
+
+        if buf.abs_position == buf.data_len:
+            # Reached end of file
+            return log_points, count
+
 
         if buf.be_uint16_from(4) == 0xfefe and buf.be_uint32_from(6) == 0:
             #It's a pause
