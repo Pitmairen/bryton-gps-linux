@@ -717,15 +717,12 @@ def _read_logpoints_format_4(buf, time, count):
         if cad != 0xff:
             lp.cadence = cad
 
-        # hr = buf.uint8_from(0x02)
-        # if hr != 0xff:
-        #     lp.heartrate = hr
+        hr = buf.uint8_from(0x02)
+        if hr != 0xff:
+            lp.heartrate = hr
 
-        if buf.uint8_from(0x02) != 0xff or \
-           buf.uint8_from(0x03) != 0xff or \
-           buf.uint8_from(0x04) != 0xff:
-
-            raise RuntimeError('Data needed (bdx, data dump) to confirm logpoint format.')
+        # buf.uint8_from(0x03) #unknown
+        # buf.uint8_from(0x04) #unknown
 
 
         log_points.append(lp)
