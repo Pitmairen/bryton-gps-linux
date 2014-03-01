@@ -425,9 +425,13 @@ def _read_logpoint_segment(buf):
         try:
             s.segment_type = buf.uint8_from(0x0c) - 0x40
         except RuntimeError:
-            warnings.warn("Unknown track segment type.", RuntimeWarning)
-            #Just set it to SEGMENT_LAST it is not currently used anyway
-            s.segment_type = 0x0E
+            try:
+                #Rider21 seems to have the same numbes as the rider40
+                s.segment_type = buf.uint8_from(0x0c)
+            except RuntimeError:
+                warnings.warn("Unknown track segment type.", RuntimeWarning)
+                #Just set it to SEGMENT_LAST it is not currently used anyway
+                s.segment_type = 0x0E
 
 
 
@@ -448,9 +452,18 @@ def _read_logpoint_segment(buf):
             # It seems to be the same format as the rider40, but the
             # airpressure is instead the altitude
             # ((buf.uint16_from(0x05) - 4000) / 4.0)
+            # Currently airpressure is not used by the code so we ignore it.
             log_points = rider40._read_logpoints_format_3(buf, s.timestamp,
                                                           count)
             s.point_size = 8
+        elif format == 0x7104:
+            # It seems to be the same format as the rider40, but the
+            # airpressure is instead the altitude
+            # ((buf.uint16_from(0x05) - 4000) / 4.0)
+            # Currently airpressure is not used by the code so we ignore it.
+            log_points = rider40._read_logpoints_format_1(buf, s.timestamp,
+                                                          count)
+            s.point_size = 6
         else:
             raise RuntimeError('Unknown logpoint format. '
                                'It can probably easily be fixed if test data '
