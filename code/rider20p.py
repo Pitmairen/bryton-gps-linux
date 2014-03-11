@@ -464,6 +464,9 @@ def _read_logpoint_segment(buf):
             log_points = rider40._read_logpoints_format_1(buf, s.timestamp,
                                                           count)
             s.point_size = 6
+        elif format == 0x7304:
+            log_points = _read_logpoints_format_2(buf, s.timestamp, count)
+            s.point_size = 7
         else:
             raise RuntimeError('Unknown logpoint format. '
                                'It can probably easily be fixed if test data '
@@ -497,6 +500,40 @@ def _read_logpoints_format_1(buf, time, count):
 
 
     return log_points
+
+
+
+def _read_logpoints_format_2(buf, time, count):
+
+    log_points = []
+
+    for i in range(count):
+
+        speed = buf.uint8_from(0x0)
+        speed = speed / 8.0 * 60 * 60 / 1000 if speed != 0xff else 0
+
+        lp = LogPoint(
+            timestamp=time,
+            speed=speed,
+            temperature=buf.int16_from(0x02) / 10.0,
+            #Not actually airpressure on this device, but altitude.
+            airpressure=((buf.uint16_from(0x04) - 4000) / 4.0)
+        )
+
+        cad = buf.uint8_from(0x01)
+        if cad != 0xff:
+            lp.cadence = cad
+
+        log_points.append(lp)
+
+        time += 4
+
+        buf.set_offset(0x7)
+
+
+    return log_points
+
+
 
 
 
