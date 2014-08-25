@@ -29,6 +29,7 @@ import getpass
 import time
 
 from functools import partial
+from itertools import chain
 
 import rider40
 import gpx
@@ -325,6 +326,9 @@ def options():
                         'This will only have effect when generating TCX files '
                         'and uploading to strava.com')
 
+    p.add_argument('--adj-time', nargs='?', type=int, metavar='N',
+                   help='Adjust the timestamps of the tracks in +- hours.')
+
     return p
 
 
@@ -354,6 +358,9 @@ def main():
         elif args.tracks:
 
             tracks = get_tracks(history, args.tracks)
+
+            if args.adj_time:
+                adjust_time(tracks, args.adj_time)
 
             if args.summary:
                 print_summaries(tracks, args.storage)
@@ -444,6 +451,28 @@ def format_bytes(num):
         num /= 1024.0
     return "%3.1f%s" % (num, 'TB')
 
+
+def adjust_time(tracks, adjustment):
+    """Fix track and trackpoint timestamps. adjustment=+-n hours"""
+    for t in tracks:
+        adjust_track_time(t, adjustment)
+
+
+def adjust_track_time(track, adjustment):
+
+    adjustment = adjustment * 60 * 60
+
+    for sum in track.lap_summaries:
+        sum.start += adjustment
+        sum.end += adjustment
+
+    track.timestamp += adjustment
+    for seg in chain(track.trackpoints, track.logpoints):
+        seg.timestamp += adjustment
+        for pt in seg:
+            pt.timestamp += adjustment
+
+    return track
 
 if __name__ == '__main__':
 
