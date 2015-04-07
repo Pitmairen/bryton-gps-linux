@@ -573,7 +573,7 @@ def _read_logpoint_segment(buf):
     count = buf.uint16_from(0x0a)
 
     format = buf.uint16_from(0x08)
-
+    
     buf.set_offset(0x10)
 
     if count > 0:
@@ -590,6 +590,9 @@ def _read_logpoint_segment(buf):
         elif format == 0x7f01:
             log_points = _read_logpoints_format_4(buf, s.timestamp, count)
             s.point_size = 10
+        elif format == 0x7b01:
+            log_points = _read_logpoints_format_5(buf, s.timestamp, count)
+            s.point_size = 9
         else:
             raise RuntimeError('Unknown logpoint format. You are probably '
                                'using a sensor that has not been tested '
@@ -696,7 +699,7 @@ def _read_logpoints_format_3(buf, time, count):
     return log_points
 
 
-
+# Power and Heartrate
 def _read_logpoints_format_4(buf, time, count):
 
     log_points = []
@@ -721,6 +724,10 @@ def _read_logpoints_format_4(buf, time, count):
         if hr != 0xff:
             lp.heartrate = hr
 
+        pw = buf.uint16_from(0x03)
+        if pw != 0xff:
+            lp.watts = pw
+        
         # buf.uint8_from(0x03) #unknown
         # buf.uint8_from(0x04) #unknown
 
@@ -733,6 +740,37 @@ def _read_logpoints_format_4(buf, time, count):
 
     return log_points
 
+# Power and NO Heartrate
+def _read_logpoints_format_5(buf, time, count):
+
+    log_points = []
+    for i in range(count):
+
+        speed = buf.uint8_from(0x00)
+        speed = speed / 8.0 * 60 * 60 / 1000 if speed != 0xff else 0
+
+        lp = LogPoint(
+            timestamp=time,
+            speed=speed,
+            temperature=buf.int16_from(0x05) / 10.0,
+            airpressure=buf.uint16_from(0x07) * 2.0
+        )
+
+        cad = buf.uint8_from(0x01)
+        if cad != 0xff:
+            lp.cadence = cad
+
+        w = buf.uint16_from(0x02)
+        if w != 0xff:
+            lp.watts = w
+
+        log_points.append(lp)
+
+        time += 1
+
+        buf.set_offset(0x9)
+
+    return log_points
 
 def _read_summary(buf):
 
@@ -757,10 +795,10 @@ def _read_summary(buf):
         buf.uint8_from(0x11) if buf.uint8_from(0x11) != 0xff else 0,
     )
 
-    # s.watts = AvgMax(
-    #     buf.uint8_from(0x12),
-    #     buf.uint8_from(0x13),
-    # )
+    s.watts = AvgMax(
+        buf.uint16_from(0x12),
+        buf.uint16_from(0x14),
+    )
 
     s.altitude_gain = buf.uint16_from(0x16)
     s.altitude_loss = buf.uint16_from(0x18)
