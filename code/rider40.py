@@ -592,7 +592,7 @@ def _read_logpoint_segment(buf):
             s.point_size = 10
         elif format == 0x7b01:
             log_points = _read_logpoints_format_5(buf, s.timestamp, count)
-            s.point_size = 10
+            s.point_size = 9
         else:
             raise RuntimeError('Unknown logpoint format. You are probably '
                                'using a sensor that has not been tested '
@@ -795,10 +795,10 @@ def _read_summary(buf):
         buf.uint8_from(0x11) if buf.uint8_from(0x11) != 0xff else 0,
     )
 
-    # s.watts = AvgMax(
-    #     buf.uint8_from(0x12),
-    #     buf.uint8_from(0x13),
-    # )
+    s.watts = AvgMax(
+        buf.uint16_from(0x12),
+        buf.uint16_from(0x14),
+    )
 
     s.altitude_gain = buf.uint16_from(0x16)
     s.altitude_loss = buf.uint16_from(0x18)
