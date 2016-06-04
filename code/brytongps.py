@@ -30,7 +30,7 @@ import time
 from functools import partial
 
 import rider40
-import rider20p
+import rider310
 import gpx
 import tcx
 import json_export
@@ -75,7 +75,7 @@ def get_device(dev):
 
 def get_fatfs_device(dev):
 
-    return rider20p, rider20p.Rider20p(dev)
+    return rider310, rider310.Rider310(dev)
 
 
 
@@ -83,7 +83,7 @@ def get_fatfs_device(dev):
 def open_device(dev_path, fatfs_device, fatfs_path):
 
     if fatfs_device:
-        dev_access = rider20p.FSReader(dev_path, fatfs_path)
+        dev_access = rider310.FSReader(dev_path, fatfs_path)
     else:
         import device_access
         dev_access = device_access.DeviceAccess(dev_path)
